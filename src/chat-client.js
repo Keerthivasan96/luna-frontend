@@ -1,7 +1,7 @@
 // frontend/src/chat-client.js
 // Frontend → Backend → Gemini (via your backend v2)
 
-const BASE_URL = "https://public-speaking-for-kids-backend-v2.vercel.app";
+const BASE_URL = "https://luna-backend-two.vercel.app";
 
 // Helper: call backend generate endpoint
 async function callBackendGenerate(prompt) {

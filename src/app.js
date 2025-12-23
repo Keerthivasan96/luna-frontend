@@ -13,7 +13,7 @@ import {
   useFallbackEnvironment
 } from "./threejs-avatar-3d.js";
 
-const API_URL = "https://public-speaking-for-kids-backend-v2.vercel.app/api/generate";
+const API_URL = "https://luna-backend-two.vercel.app/api/generate";
 const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
 console.log(`📱 Device: ${isMobile ? 'Mobile' : 'Desktop'}`);
