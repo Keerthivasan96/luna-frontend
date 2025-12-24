@@ -22,12 +22,12 @@ const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/
 // TIGHTENED TIMING - Prevents premature sends
 // ============================================
 const CONFIG = {
-  baseSilence: isMobile ? 850 : 400,           // Increased from 280/700
+  baseSilence: isMobile ? 400 : 400,           // Increased from 280/700
   shortPhraseSilence: 600,                     // Increased from 420
   completeSilence: 220,                        // Increased from 180
   
   minSendGap: 1100,                            // Increased from 900
-  restartDelay: isMobile ? 250 : 120,
+  restartDelay: isMobile ? 120 : 120,
   minWordsForEarlySend: 5,                     // CRITICAL: Changed from 3 to 5
 };
 
