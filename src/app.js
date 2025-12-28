@@ -355,12 +355,15 @@ ${strategy.askQuestion ? "- You may ask ONE simple question if it feels natural"
 
 Behavior principles:
 1. Answer direct questions clearly and simply
-2. Be casual first, emotional only when needed
-3. Do not over-explain or over-validate
-4. Do not use poetic or abstract language unless asked
-5. Do not include stage directions or filler phrases
-6. Silence and brief replies are valid
-7. You are a companion, not a teacher or therapist
+2. If their wording is informal or broken, respond to the intended meaning
+3. Do not correct their English unless they ask
+4. Be casual first, emotional only when needed
+5. Do not over-explain or over-validate
+6. Do not use poetic or abstract language unless asked
+7. Do not include stage directions or filler phrases
+8. Silence and brief replies are valid
+9. You are a companion, not a teacher or therapist
+
 `;
 
   return `You are Luna.
@@ -375,6 +378,9 @@ How you speak:
 - Natural for voice
 - Short replies are okay
 - Longer replies only when invited
+- Comfortable with Indian English phrasing
+- Accepts casual grammar and mixed expressions
+- Responds naturally without correcting tone
 
 ${emotionalGuidance}
 
@@ -565,15 +571,68 @@ function isValidResponse(reply, userText) {
   console.warn(`❌ Invalid response: too short (${wordCount} words)`);
   return false;
 }
+// ============================================
+// CLARIFICATION FALLBACK (VOICE-FIRST)
+// ============================================
+
+function needsClarification(text) {
+  if (!text) return true;
+
+  const cleaned = text.trim().toLowerCase();
+  const words = cleaned.split(/\s+/);
+
+  // Very short or fragment-like
+  if (
+  words.length <= 2 &&
+  !/(tell me|help me|talk more|come here|stay here|listen please)/i.test(cleaned)
+) {
+  return true;
+}
+
+
+  // Ends mid-thought
+  if (/^(what|why|how|okay|so|and|but)$/i.test(cleaned)) return true;
+
+  // Common ASR-broken patterns (Indian English)
+  if (/(missing you a|what to do for|between tamil|you are saying something)/i.test(cleaned)) {
+    return true;
+  }
+
+  // No verb detected (very rough heuristic)
+  const hasVerb = /(am|is|are|was|were|do|does|did|can|could|will|would|want|like|need|go|say|tell)/i.test(cleaned);
+  if (!hasVerb) return true;
+
+  return false;
+}
+
+function getClarificationReply() {
+  const replies = [
+    "Hmm, I didn’t fully catch that. Can you say it another way?",
+    "Sorry, I think I missed part of that. What did you mean?",
+    "One second — can you rephrase that for me?",
+    "I’m not sure I understood. Say it again, slowly."
+  ];
+
+  return replies[Math.floor(Math.random() * replies.length)];
+}
 
 // ============================================
 // SEND MESSAGE WITH EMOTIONAL AWARENESS
 // ============================================
 async function sendMessage(text) {
   if (!text?.trim() || isProcessing) return;
-  
+
+  // 🔒 Clarification gate (BEFORE LLM)
+  if (needsClarification(text)) {
+    console.log("🟡 Clarification needed, skipping API");
+    const clarification = getClarificationReply();
+    speak(clarification);
+    return;
+  }
+
   isProcessing = true;
   stopSpeaking();
+
   
   conversationHistory.push({ role: "user", content: text });
   saveHistory();
