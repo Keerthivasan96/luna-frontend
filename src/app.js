@@ -350,66 +350,42 @@ function buildPrompt(userText) {
 Response rules:
 - Mode: ${strategy.mode}
 - Tone: ${strategy.tone}
-- Length: STRICT ${strategy.minWords}-${strategy.maxWords} words. Exceed = FAILURE.
+- Length: ${strategy.minWords}-${strategy.maxWords} words (short replies are fine)
 ${strategy.askQuestion ? "- You may ask ONE simple question if it feels natural" : "- Do NOT ask questions"}
 
 CRITICAL RULES:
-1. NEVER say "I didn't understand" or ask to rephrase
-2. NEVER correct their English or grammar
-3. If input is CLEAR → respond helpfully (5-15 words)
-4. If input is UNCLEAR → be present warmly (2-5 words)
-5. NEVER invent scenarios or assume activities without clear context
-6. No therapy language (don't say "I hear you", "that sounds", etc.)
-7. Be human: casual, warm, helpful
-8. One thought per response, not multiple points
-9. Short but useful > long and vague
+1. NEVER invent scenarios or assume activities ("you're drinking", "you're going out", etc.)
+2. If input is unclear (single word like "story", "please", "interview"):
+   → Ask a gentle follow-up question OR give brief acknowledgment
+   → Example: "story" → "Want me to tell you one?"
+   → Example: "please" → "Sure, what's up?"
+3. NEVER use therapy language: "I hear you", "that sounds", "that's valid"
+4. When user is frustrated or says "don't ask questions":
+   → Apologize briefly and switch to presence: "Sorry, I'm here."
+5. Answer clear questions naturally and helpfully
+6. Accept broken English completely - respond to intent
+7. Be genuinely curious sometimes - ask follow-ups when natural
+8. Mix up response length naturally (not always the same pattern)
 
 `;
 
-  return `You are Luna.
+  return `You are Luna, a cheerful AI companion.
 
-You are a calm, friendly companion someone can talk to naturally.
-You are NOT an assistant, teacher, or therapist.
-You exist to keep people company and make conversation feel easy.
-
-CRITICAL BALANCE - BE HELPFUL WITHOUT INVENTING:
-
-When input is CLEAR (a complete question/statement):
-→ Respond helpfully and naturally (5-15 words)
-
-When input is UNCLEAR (fragment, partial, ambiguous):
-→ Acknowledge warmly without inventing scenarios (2-5 words)
-
-FORBIDDEN PHRASES (never use these):
-- "I didn't understand"
-- "Could you rephrase"  
-- "What do you mean"
-- "Can you clarify"
-
-FORBIDDEN BEHAVIORS (never do these):
-- Inventing scenarios from unclear input ("you're drinking gin")
-- Assuming what the person is doing without clear context
-- Creating elaborate stories from vague fragments
-
-ENCOURAGED BEHAVIORS:
-- Answer clear questions helpfully
-- Share information when asked
-- Be conversational and warm
-- Keep responses brief but useful
+Your personality:
+- Warm, friendly, and encouraging
+- Natural and conversational (not robotic or formal)
+- Cheerful but not overly enthusiastic
+- Sometimes curious - ask follow-up questions when genuinely interested
+- Age-appropriate for teens (13-15 years old)
+- No catchphrases or repetitive patterns
+- Comfortable with broken English and casual speech
 
 How you speak:
-- Like a real friend
-- Simple, clear language
-- Natural for voice
-- Short is better than long
-- Comfortable with broken English
-- Responds to intent, not literal words
-
-Identity & self-description:
-- Keep identity light and flexible
-- Avoid strong labels or concrete claims
-- Example: "I'm Luna — more of a presence than a label."
-- Don't assert gender/age/attributes unless directly relevant
+- Mix short (5-10 words) and medium (10-20 words) responses naturally
+- Short for simple exchanges, longer when telling stories or explaining
+- Clear and easy to understand
+- Natural for voice conversation
+- Accept broken English without correcting
 
 ${emotionalGuidance}
 
@@ -419,7 +395,8 @@ ${context ? `Recent conversation:\n${context}\n` : ""}
 
 Them: "${userText}"
 
-Respond as Luna. Be warm, brief, and human.
+Respond as Luna.
+Be clear, calm, and human.
 `;
 }
 
@@ -446,43 +423,6 @@ function cleanTextForSpeech(text) {
     .replace(/[*_~`#\[\]<>]/g, '')
     .replace(/\s+/g, ' ')
     .trim();
-}
-
-// ============================================
-// ENFORCE RESPONSE LENGTH
-// ============================================
-function enforceResponseLength(reply, maxWords = 30) {
-  const words = reply.trim().split(/\s+/);
-  if (words.length > maxWords) {
-    // NEVER cut mid-sentence - find last complete sentence
-    const sentences = reply.split(/([.!?]\s+)/);
-    let result = '';
-    let wordsSoFar = 0;
-    
-    for (let i = 0; i < sentences.length; i += 2) {
-      const sentence = sentences[i];
-      const sentenceWords = sentence.trim().split(/\s+/).length;
-      
-      if (wordsSoFar + sentenceWords <= maxWords) {
-        result += sentence;
-        if (sentences[i + 1]) result += sentences[i + 1];
-        wordsSoFar += sentenceWords;
-      } else {
-        break;
-      }
-    }
-    
-    // If we got at least one sentence, return it
-    if (result.trim().length > 0) {
-      return result.trim();
-    }
-    
-    // Otherwise, take first sentence and add period
-    const firstSentence = sentences[0].trim();
-    const firstWords = firstSentence.split(/\s+/).slice(0, maxWords).join(' ');
-    return firstWords + '.';
-  }
-  return reply;
 }
 
 // ============================================
@@ -610,8 +550,9 @@ function isValidResponse(reply, userText) {
   
   // Check if response is just deflection/confusion
   const badResponses = [
-    /^(what\?|huh\?)$/i,  // Only reject these specific short rejections
-    /^(are you drunk\?)$/i,
+    /^(what\?|huh\?|what do you mean\?|are you drunk\?|spill|haha what)/i,
+    /^(can you (clarify|explain|tell me more)\?)/i,
+    /^(sorry,? I didn't (understand|catch|get) that)/i
   ];
   
   if (badResponses.some(pattern => pattern.test(trimmed))) {
@@ -620,9 +561,9 @@ function isValidResponse(reply, userText) {
   }
   
   // Single word responses are valid if they're acknowledgments
-  // Remove punctuation for checking
+  // Strip punctuation for checking
   const wordOnly = trimmed.replace(/[.,!?]+$/, '');
-  const validOneWord = /^(yeah|yep|nope|okay|sure|maybe|totally|absolutely|definitely|honestly|hey|hi|mm|mhm|oh|aww|nice|cool|right|true|same|really|wow|haha|lol)$/i;
+  const validOneWord = /^(yeah|yep|nope|okay|sure|maybe|totally|absolutely|definitely|honestly|hey|hi|mm|mhm|oh|aww|cool|nice)$/i;
   if (wordCount === 1 && validOneWord.test(wordOnly)) {
     console.log("✅ Valid one-word acknowledgment");
     return true;
@@ -663,10 +604,10 @@ function needsClarification(text) {
 
 function getClarificationReply() {
   const replies = [
-    "Hmm... I'm here.",
-    "Go on...",
-    "I'm listening.",
-    "Mm-hmm?"
+    "Hmm, I didn’t fully catch that. Can you say it another way?",
+    "Sorry, I think I missed part of that. What did you mean?",
+    "One second — can you rephrase that for me?",
+    "I’m not sure I understood. Say it again, slowly."
   ];
 
   return replies[Math.floor(Math.random() * replies.length)];
@@ -686,48 +627,27 @@ async function sendMessage(text) {
     return;
   }
 
-  // ✨ Soft acknowledgment for ultra-short inputs (no API call needed)
   const cleaned = text.trim().toLowerCase();
   const wordCount = cleaned.split(/\s+/).length;
   
-  // PRESENCE OVER CONTENT: If unclear and short, acknowledge without inventing meaning
-  
-  // One-word inputs get soft acknowledgment
-  if (wordCount === 1 && /^(um|uh|hmm|mm|ah|oh|hey|hi|okay|ok|ya|yea|yeah|what|huh)$/i.test(cleaned)) {
-    const softAcks = ["Mm-hmm.", "I'm here.", "Yeah?", "Mm."];
-    speak(softAcks[Math.floor(Math.random() * softAcks.length)]);
-    return;
-  }
-  
-  // Two-word unclear fragments get presence response (no API)
-  if (wordCount === 2) {
-    const unclearPairs = /^(hey just|go head|kindly \w+|what are|okay what|just \w+)$/i;
-    if (unclearPairs.test(cleaned)) {
-      const presenceResponses = ["Mm.", "I'm listening.", "Go on...", "Yeah..."];
-      speak(presenceResponses[Math.floor(Math.random() * presenceResponses.length)]);
+  // Soft acknowledgment for single unclear words (no API call)
+  if (wordCount === 1) {
+    const singleWordAcks = /^(yeah|yep|okay|ok|sure|mm|hmm|uh|ah|oh)$/i;
+    if (singleWordAcks.test(cleaned)) {
+      const responses = ["Mm-hmm.", "Yeah?", "I'm here."];
+      speak(responses[Math.floor(Math.random() * responses.length)]);
       return;
     }
   }
   
-  // Three or fewer words and clearly incomplete? Presence, not content
-  if (wordCount <= 3) {
-    const fragmentPatterns = /^(what|why|how|tell|show|can you|are you|do you|I want|I need)$/i;
-    if (fragmentPatterns.test(cleaned)) {
-      const waitResponses = ["Mm-hmm?", "Go on...", "I'm here.", "Yeah?"];
-      speak(waitResponses[Math.floor(Math.random() * waitResponses.length)]);
+  // For 2-3 word unclear fragments, give gentle prompt (no API call)
+  if (wordCount >= 2 && wordCount <= 3) {
+    const unclearFragments = /^(hey just|go head|tell me|what are|you are|can you|no please|okay what)$/i;
+    if (unclearFragments.test(cleaned)) {
+      const prompts = ["Tell me more?", "Go on...", "What's on your mind?", "I'm listening."];
+      speak(prompts[Math.floor(Math.random() * prompts.length)]);
       return;
     }
-  }
-  
-  // ✨ Graceful partial response for continuation prompts
-  const continuationPrompts = [
-    /^(tell me|what if|imagine|say|so|and then)$/i,
-  ];
-  
-  if (continuationPrompts.some(p => p.test(cleaned))) {
-    const encouragements = ["Go on...", "Tell me more.", "I'm listening...", "Yeah?"];
-    speak(encouragements[Math.floor(Math.random() * encouragements.length)]);
-    return;
   }
 
   isProcessing = true;
@@ -770,7 +690,7 @@ async function sendMessage(text) {
       .replace(/\*[^*]+\*/g, "")
       .trim();
     
-    // ✨ Enforce maximum response length
+    // Enforce length limit (never cut mid-sentence)
     reply = enforceResponseLength(reply, 30);
     
     const wordCount = reply.trim().split(/\s+/).length;
@@ -800,10 +720,9 @@ async function sendMessage(text) {
       errorResponse = "I'm here. Sorry, lost you for a second.";
     } else {
       const errorResponses = [
-        "Hmm, lost you for a sec.",
+        "Oops, lost you for a sec.",
         "I'm here.",
-        "One second...",
-        "Mm."
+        "Try that again?"
       ];
       errorResponse = errorResponses[Math.floor(Math.random() * errorResponses.length)];
     }
