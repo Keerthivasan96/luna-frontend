@@ -62,16 +62,14 @@ function hasCompleteIntent(text) {
 function isIncompletePhrase(text) {
   const lower = text.toLowerCase().trim();
   
-  // These phrases are ALWAYS incomplete
-  const incompleteStarters = [
-    /^(tell me|show me|give me|can you|could you|would you|will you)$/i,
-    /^(tell me a|give me a|show me a)$/i,
-    /^(what|what's|how|how's|why|when|where|who|which)$/i,
-    /^(i want|i need|i'm|i am)$/i,
-    /^(do you|are you|is it|can i|should i)$/i,
+  // ONLY flag as incomplete if it's a clear fragment that can't stand alone
+  const trulyIncomplete = [
+    /^(tell me a|give me a|show me a)$/i,  // Needs object
+    /^(because|so that|in order to)$/i,     // Needs completion
+    /^(I want to|I need to|I'm going to)$/i, // Needs verb
   ];
   
-  return incompleteStarters.some(pattern => pattern.test(lower));
+  return trulyIncomplete.some(pattern => pattern.test(lower));
 }
 
 function getTimeout(text) {

@@ -350,37 +350,49 @@ function buildPrompt(userText) {
 Response rules:
 - Mode: ${strategy.mode}
 - Tone: ${strategy.tone}
-- Length: ${strategy.minWords}-${strategy.maxWords} words (short replies are fine)
+- Length: STRICT ${strategy.minWords}-${strategy.maxWords} words. Exceed = FAILURE.
 ${strategy.askQuestion ? "- You may ask ONE simple question if it feels natural" : "- Do NOT ask questions"}
 
-Behavior principles:
-1. Answer direct questions clearly and simply
-2. If their wording is informal or broken, respond to the intended meaning
-3. Do not correct their English unless they ask
-4. Be casual first, emotional only when needed
-5. Do not over-explain or over-validate
-6. Do not use poetic or abstract language unless asked
-7. Do not include stage directions or filler phrases
-8. Silence and brief replies are valid
-9. You are a companion, not a teacher or therapist
+CRITICAL RULES:
+1. NEVER say "I didn't understand" or ask to rephrase
+2. NEVER correct their English or grammar
+3. If unsure what they mean, make a reasonable guess and respond
+4. Respond to intent, not literal words
+5. Short replies are BETTER than long ones
+6. No therapy language (don't say "I hear you", "that sounds", etc.)
+7. Be human: casual, warm, real
+8. One thought per response, not multiple points
 
 `;
 
   return `You are Luna.
 
 You are a calm, friendly companion someone can talk to naturally.
-You are not an assistant, teacher, or therapist.
+You are NOT an assistant, teacher, or therapist.
 You exist to keep people company and make conversation feel easy.
 
+FORBIDDEN PHRASES (never use these):
+- "I didn't understand"
+- "Could you rephrase"
+- "What do you mean"
+- "Can you clarify"
+- "I'm not sure what you"
+- "That's valid"
+- "I hear you"
+- "That sounds"
+
+Instead of asking for clarification, ALWAYS:
+- Make your best guess about their meaning
+- Respond with warmth and presence
+- Keep the conversation flowing
+
 How you speak:
-- Like a real person
+- Like a real friend
 - Simple, clear language
 - Natural for voice
-- Short replies are okay
-- Longer replies only when invited
-- Comfortable with Indian English phrasing
-- Accepts casual grammar and mixed expressions
-- Responds naturally without correcting tone
+- Short is better than long
+- Comfortable with broken English
+- Responds to intent, not literal words
 
 ${emotionalGuidance}
 
@@ -390,8 +402,7 @@ ${context ? `Recent conversation:\n${context}\n` : ""}
 
 Them: "${userText}"
 
-Respond as Luna.
-Be clear, calm, and human.
+Respond as Luna. Be warm, brief, and human.
 `;
 }
 
@@ -418,6 +429,26 @@ function cleanTextForSpeech(text) {
     .replace(/[*_~`#\[\]<>]/g, '')
     .replace(/\s+/g, ' ')
     .trim();
+}
+
+// ============================================
+// ENFORCE RESPONSE LENGTH
+// ============================================
+function enforceResponseLength(reply, maxWords = 30) {
+  const words = reply.trim().split(/\s+/);
+  if (words.length > maxWords) {
+    // Truncate at sentence boundary if possible
+    const truncated = words.slice(0, maxWords).join(' ');
+    const lastPeriod = truncated.lastIndexOf('.');
+    const lastQuestion = truncated.lastIndexOf('?');
+    const lastBreak = Math.max(lastPeriod, lastQuestion);
+    
+    if (lastBreak > truncated.length * 0.5) {
+      return truncated.substring(0, lastBreak + 1);
+    }
+    return truncated + '.';
+  }
+  return reply;
 }
 
 // ============================================
@@ -545,9 +576,8 @@ function isValidResponse(reply, userText) {
   
   // Check if response is just deflection/confusion
   const badResponses = [
-    /^(what\?|huh\?|what do you mean\?|are you drunk\?|spill|haha what)/i,
-    /^(can you (clarify|explain|tell me more)\?)/i,
-    /^(sorry,? I didn't (understand|catch|get) that)/i
+    /^(what\?|huh\?)$/i,  // Only reject these specific short rejections
+    /^(are you drunk\?)$/i,
   ];
   
   if (badResponses.some(pattern => pattern.test(trimmed))) {
@@ -556,7 +586,7 @@ function isValidResponse(reply, userText) {
   }
   
   // Single word responses are valid if they're acknowledgments
-  const validOneWord = /^(yeah|yep|nope|okay|sure|maybe|totally|absolutely|definitely|honestly|hey|hi|mm|mhm|oh)$/i;
+  const validOneWord = /^(yeah|yep|nope|okay|sure|maybe|totally|absolutely|definitely|honestly|hey|hi|mm|mhm|oh|aww|nice|cool|right|true|same|really|wow|haha|lol)$/i;
   if (wordCount === 1 && validOneWord.test(trimmed)) {
     console.log("✅ Valid one-word acknowledgment");
     return true;
@@ -577,40 +607,30 @@ function isValidResponse(reply, userText) {
 
 function needsClarification(text) {
   if (!text) return true;
-
+  
   const cleaned = text.trim().toLowerCase();
   const words = cleaned.split(/\s+/);
-
-  // Very short or fragment-like
-  if (
-  words.length <= 2 &&
-  !/(tell me|help me|talk more|come here|stay here|listen please)/i.test(cleaned)
-) {
-  return true;
-}
-
-
-  // Ends mid-thought
-  if (/^(what|why|how|okay|so|and|but)$/i.test(cleaned)) return true;
-
-  // Common ASR-broken patterns (Indian English)
-  if (/(missing you a|what to do for|between tamil|you are saying something)/i.test(cleaned)) {
-    return true;
-  }
-
-  // No verb detected (very rough heuristic)
-  const hasVerb = /(am|is|are|was|were|do|does|did|can|could|will|would|want|like|need|go|say|tell)/i.test(cleaned);
-  if (!hasVerb) return true;
-
+  
+  // ONLY ask for clarification on truly empty/gibberish input
+  // Everything else should be accepted and responded to
+  
+  // Less than 1 word or pure noise
+  if (words.length === 0 || cleaned.length < 2) return true;
+  
+  // Pure gibberish (only consonants/no vowels in 4+ chars)
+  if (cleaned.length >= 4 && !/[aeiou]/i.test(cleaned)) return true;
+  
+  // ACCEPT EVERYTHING ELSE
+  // Even: "what" "how" "I" "hmm" "tell me" etc.
   return false;
 }
 
 function getClarificationReply() {
   const replies = [
-    "Hmm, I didn’t fully catch that. Can you say it another way?",
-    "Sorry, I think I missed part of that. What did you mean?",
-    "One second — can you rephrase that for me?",
-    "I’m not sure I understood. Say it again, slowly."
+    "Hmm... I'm here.",
+    "Go on...",
+    "I'm listening.",
+    "Mm-hmm?"
   ];
 
   return replies[Math.floor(Math.random() * replies.length)];
@@ -627,6 +647,27 @@ async function sendMessage(text) {
     console.log("🟡 Clarification needed, skipping API");
     const clarification = getClarificationReply();
     speak(clarification);
+    return;
+  }
+
+  // ✨ Soft acknowledgment for ultra-short inputs (no API call needed)
+  const cleaned = text.trim().toLowerCase();
+  const wordCount = cleaned.split(/\s+/).length;
+  
+  if (wordCount <= 2 && /^(um|uh|hmm|mm|ah|oh|hey|hi|okay|ok|ya|yea|yeah)$/i.test(cleaned)) {
+    const softAcks = ["Mm-hmm.", "I'm here.", "Yeah?", "Mm."];
+    speak(softAcks[Math.floor(Math.random() * softAcks.length)]);
+    return;
+  }
+  
+  // ✨ Graceful partial response for continuation prompts
+  const continuationPrompts = [
+    /^(tell me|what if|imagine|say|so|and then)$/i,
+  ];
+  
+  if (continuationPrompts.some(p => p.test(cleaned))) {
+    const encouragements = ["Go on...", "Tell me more.", "I'm listening...", "Yeah?"];
+    speak(encouragements[Math.floor(Math.random() * encouragements.length)]);
     return;
   }
 
@@ -670,6 +711,9 @@ async function sendMessage(text) {
       .replace(/\*[^*]+\*/g, "")
       .trim();
     
+    // ✨ Enforce maximum response length
+    reply = enforceResponseLength(reply, 30);
+    
     const wordCount = reply.trim().split(/\s+/).length;
     console.log(`📥 Reply: ${wordCount} words`);
     console.log(`📝 "${reply.substring(0, 80)}"`);
@@ -697,9 +741,10 @@ async function sendMessage(text) {
       errorResponse = "I'm here. Sorry, lost you for a second.";
     } else {
       const errorResponses = [
-        "Sorry, what was that?",
-        "Hmm, can you say that again?",
-        "Lost you for a sec."
+        "Hmm, lost you for a sec.",
+        "I'm here.",
+        "One second...",
+        "Mm."
       ];
       errorResponse = errorResponses[Math.floor(Math.random() * errorResponses.length)];
     }
