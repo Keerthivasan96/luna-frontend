@@ -19,16 +19,16 @@ let interimBuffer = "";
 const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
 // ============================================
-// TIGHTENED TIMING - Prevents premature sends
+// TIMING - Wait longer for complete sentences
 // ============================================
 const CONFIG = {
-  baseSilence: isMobile ? 400 : 400,           // Increased from 280/700
-  shortPhraseSilence: 600,                     // Increased from 420
-  completeSilence: 220,                        // Increased from 180
+  baseSilence: isMobile ? 1200 : 1500,         // Wait 1.2-1.5 seconds (increased from 400)
+  shortPhraseSilence: 1800,                     // Wait 1.8 seconds for short phrases (increased from 600)
+  completeSilence: 800,                         // Wait 0.8 seconds after clear ending (increased from 220)
   
-  minSendGap: 1100,                            // Increased from 900
-  restartDelay: isMobile ? 120 : 120,
-  minWordsForEarlySend: 5,                     // CRITICAL: Changed from 3 to 5
+  minSendGap: 1500,                             // Minimum 1.5 seconds between sends (increased from 1100)
+  restartDelay: isMobile ? 200 : 200,
+  minWordsForEarlySend: 6,                      // Only send early if 6+ words (increased from 5)
 };
 
 console.log(`🎤 Speech: ${isMobile ? 'Mobile' : 'Desktop'} mode`);
@@ -100,24 +100,30 @@ function getTimeout(text) {
     return CONFIG.shortPhraseSilence;
   }
   
-  // 2-3 words - be VERY cautious
+  // 2-3 words - be VERY cautious, wait longer
   if (wordCount <= 3) {
-    const shortComplete = /^(i'?m (good|fine|great|okay|tired)|that'?s (good|great|cool|nice)|sounds (good|great))$/i;
+    const shortComplete = /^(i'?m (good|fine|great|okay|tired)|that'?s (good|great|cool|nice)|sounds (good|great)|yes please|no thanks|thank you|you too)$/i;
     if (shortComplete.test(text.toLowerCase())) {
       console.log(`✅ Complete short phrase (${wordCount} words)`);
       return CONFIG.baseSilence;
     }
     console.log(`⏳ ${wordCount} words - likely incomplete, waiting`);
-    return CONFIG.shortPhraseSilence;
+    return CONFIG.shortPhraseSilence;  // Wait 1.8 seconds
   }
   
-  // 4 words - still cautious
+  // 4 words - still cautious, wait a bit
   if (wordCount === 4) {
     console.log(`📝 4 words - waiting to confirm complete`);
-    return CONFIG.baseSilence;
+    return CONFIG.baseSilence;  // Wait 1.2-1.5 seconds
   }
   
-  // 5+ words - likely complete
+  // 5 words - still wait
+  if (wordCount === 5) {
+    console.log(`📝 5 words - waiting to confirm complete`);
+    return CONFIG.baseSilence;  // Wait 1.2-1.5 seconds
+  }
+  
+  // 6+ words - likely complete but still wait a reasonable time
   console.log(`📝 Normal sentence (${wordCount} words)`);
   return CONFIG.baseSilence;
 }
