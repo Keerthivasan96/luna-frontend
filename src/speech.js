@@ -101,14 +101,14 @@ function getTimeout(text) {
   }
   
   // 2-3 words - be VERY cautious, wait longer
-  if (wordCount <= 3) {
-    const shortComplete = /^(i'?m (good|fine|great|okay|tired)|that'?s (good|great|cool|nice)|sounds (good|great)|yes please|no thanks|thank you|you too)$/i;
+  if (wordCount === 2 || wordCount === 3) {
+    const shortComplete = /^(i'?m (good|fine|great|okay|tired)|that'?s (good|great|cool|nice)|sounds (good|great)|yes please|no thanks|thank you|you too|not really|right now|of course)$/i;
     if (shortComplete.test(text.toLowerCase())) {
       console.log(`✅ Complete short phrase (${wordCount} words)`);
       return CONFIG.baseSilence;
     }
     console.log(`⏳ ${wordCount} words - likely incomplete, waiting`);
-    return CONFIG.shortPhraseSilence;  // Wait 1.8 seconds
+    return CONFIG.shortPhraseSilence;  // Wait 1.2 seconds (longer than before)
   }
   
   // 4 words - still cautious, wait a bit
