@@ -426,6 +426,44 @@ function cleanTextForSpeech(text) {
 }
 
 // ============================================
+// ENFORCE RESPONSE LENGTH (never cut mid-sentence)
+// ============================================
+function enforceResponseLength(reply, maxWords = 30) {
+  const words = reply.trim().split(/\s+/);
+  if (words.length <= maxWords) return reply;
+  
+  // Find sentence boundaries
+  const sentences = reply.split(/([.!?]\s+)/);
+  let result = '';
+  let wordsSoFar = 0;
+  
+  for (let i = 0; i < sentences.length; i += 2) {
+    const sentence = sentences[i];
+    const sentenceWords = sentence.trim().split(/\s+/).length;
+    
+    if (wordsSoFar + sentenceWords <= maxWords) {
+      result += sentence;
+      if (sentences[i + 1]) result += sentences[i + 1];
+      wordsSoFar += sentenceWords;
+    } else {
+      break;
+    }
+  }
+  
+  // If we got at least one complete sentence, return it
+  if (result.trim().length > 0 && /[.!?]$/.test(result.trim())) {
+    return result.trim();
+  }
+  
+  // Otherwise take first sentence and ensure it ends properly
+  const firstSentence = sentences[0].trim();
+  const firstWords = firstSentence.split(/\s+/).slice(0, maxWords).join(' ');
+  return firstWords.endsWith('.') || firstWords.endsWith('!') || firstWords.endsWith('?') 
+    ? firstWords 
+    : firstWords + '.';
+}
+
+// ============================================
 // SPEAK WITH NATURAL TIMING
 // ============================================
 function speak(text) {
