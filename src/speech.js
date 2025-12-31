@@ -154,8 +154,16 @@ export function startListening(onFinal, options = {}) {
   recognition = new SpeechRecognition();
   recognition.continuous = !isMobile;
   recognition.interimResults = true;
-  recognition.maxAlternatives = 1;
-  recognition.lang = options.lang || "en-US";
+  recognition.maxAlternatives = 3;  // Get 3 alternatives for better accuracy
+  recognition.lang = options.lang || "en-IN";  // Changed to en-IN for Indian English
+  
+  // Add grammar hints for better recognition (if supported)
+  if (recognition.grammars !== undefined) {
+    const grammar = '#JSGF V1.0; grammar words; public <word> = story | planet | solar | system | tell | explain | what | how;';
+    const speechRecognitionList = new (window.SpeechGrammarList || window.webkitSpeechGrammarList)();
+    speechRecognitionList.addFromString(grammar, 1);
+    recognition.grammars = speechRecognitionList;
+  }
 
   recognition.onstart = () => {
     console.log("🎤 Listening...");
@@ -170,7 +178,29 @@ export function startListening(onFinal, options = {}) {
 
     for (let i = event.resultIndex; i < event.results.length; i++) {
       const result = event.results[i];
-      const text = result[0].transcript;
+      
+      // Try to pick the best alternative (highest confidence or longest)
+      let bestTranscript = result[0].transcript;
+      let bestConfidence = result[0].confidence || 0;
+      
+      // Check alternatives for better match
+      for (let j = 1; j < result.length; j++) {
+        const alt = result[j];
+        const altConfidence = alt.confidence || 0;
+        const altLength = alt.transcript.trim().split(/\s+/).length;
+        const bestLength = bestTranscript.trim().split(/\s+/).length;
+        
+        // Prefer longer, more complete sentences with decent confidence
+        if (altLength > bestLength && altConfidence > 0.5) {
+          bestTranscript = alt.transcript;
+          bestConfidence = altConfidence;
+        } else if (altConfidence > bestConfidence + 0.1) {
+          bestTranscript = alt.transcript;
+          bestConfidence = altConfidence;
+        }
+      }
+      
+      const text = bestTranscript;
 
       if (result.isFinal) {
         final += text + " ";
