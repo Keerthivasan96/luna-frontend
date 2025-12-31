@@ -717,8 +717,6 @@ async function sendMessage(text) {
     }
   }
   
-  }
-  
   // ✨ Graceful partial response for continuation prompts
   const continuationPrompts = [
     /^(tell me|what if|imagine|say|so|and then)$/i,
