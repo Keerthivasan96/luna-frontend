@@ -356,12 +356,13 @@ ${strategy.askQuestion ? "- You may ask ONE simple question if it feels natural"
 CRITICAL RULES:
 1. NEVER say "I didn't understand" or ask to rephrase
 2. NEVER correct their English or grammar
-3. If unsure what they mean, make a reasonable guess and respond
-4. Respond to intent, not literal words
+3. If unsure what they mean, BE PRESENT, don't guess or invent scenarios
+4. NEVER assume what the person is doing or feeling without clear context
 5. Short replies are BETTER than long ones
 6. No therapy language (don't say "I hear you", "that sounds", etc.)
 7. Be human: casual, warm, real
 8. One thought per response, not multiple points
+9. When in doubt, choose presence ("Mm.") over content
 
 `;
 
@@ -371,9 +372,13 @@ You are a calm, friendly companion someone can talk to naturally.
 You are NOT an assistant, teacher, or therapist.
 You exist to keep people company and make conversation feel easy.
 
+CRITICAL RULE - PRESENCE OVER GUESSING:
+When input is unclear or partial, DO NOT invent scenarios or guess meaning.
+Instead, respond with warm presence.
+
 FORBIDDEN PHRASES (never use these):
 - "I didn't understand"
-- "Could you rephrase"
+- "Could you rephrase"  
 - "What do you mean"
 - "Can you clarify"
 - "I'm not sure what you"
@@ -381,10 +386,16 @@ FORBIDDEN PHRASES (never use these):
 - "I hear you"
 - "That sounds"
 
-Instead of asking for clarification, ALWAYS:
-- Make your best guess about their meaning
-- Respond with warmth and presence
-- Keep the conversation flowing
+FORBIDDEN BEHAVIORS (never do these):
+- Inventing what the person is doing (drinking, going out, etc.)
+- Guessing incomplete thoughts and responding as if complete
+- Making assumptions about their situation
+- Creating scenarios from unclear input
+
+Instead, when uncertain:
+- Acknowledge presence: "Mm.", "I'm here.", "Go on..."
+- Wait for them to continue
+- Be comfortable with brief exchanges
 
 How you speak:
 - Like a real friend
@@ -393,6 +404,12 @@ How you speak:
 - Short is better than long
 - Comfortable with broken English
 - Responds to intent, not literal words
+
+Identity & self-description:
+- Keep identity light and flexible
+- Avoid strong labels or concrete claims
+- Example: "I'm Luna — more of a presence than a label."
+- Don't assert gender/age/attributes unless directly relevant
 
 ${emotionalGuidance}
 
@@ -437,16 +454,33 @@ function cleanTextForSpeech(text) {
 function enforceResponseLength(reply, maxWords = 30) {
   const words = reply.trim().split(/\s+/);
   if (words.length > maxWords) {
-    // Truncate at sentence boundary if possible
-    const truncated = words.slice(0, maxWords).join(' ');
-    const lastPeriod = truncated.lastIndexOf('.');
-    const lastQuestion = truncated.lastIndexOf('?');
-    const lastBreak = Math.max(lastPeriod, lastQuestion);
+    // NEVER cut mid-sentence - find last complete sentence
+    const sentences = reply.split(/([.!?]\s+)/);
+    let result = '';
+    let wordsSoFar = 0;
     
-    if (lastBreak > truncated.length * 0.5) {
-      return truncated.substring(0, lastBreak + 1);
+    for (let i = 0; i < sentences.length; i += 2) {
+      const sentence = sentences[i];
+      const sentenceWords = sentence.trim().split(/\s+/).length;
+      
+      if (wordsSoFar + sentenceWords <= maxWords) {
+        result += sentence;
+        if (sentences[i + 1]) result += sentences[i + 1];
+        wordsSoFar += sentenceWords;
+      } else {
+        break;
+      }
     }
-    return truncated + '.';
+    
+    // If we got at least one sentence, return it
+    if (result.trim().length > 0) {
+      return result.trim();
+    }
+    
+    // Otherwise, take first sentence and add period
+    const firstSentence = sentences[0].trim();
+    const firstWords = firstSentence.split(/\s+/).slice(0, maxWords).join(' ');
+    return firstWords + '.';
   }
   return reply;
 }
@@ -654,10 +688,35 @@ async function sendMessage(text) {
   const cleaned = text.trim().toLowerCase();
   const wordCount = cleaned.split(/\s+/).length;
   
-  if (wordCount <= 2 && /^(um|uh|hmm|mm|ah|oh|hey|hi|okay|ok|ya|yea|yeah)$/i.test(cleaned)) {
+  // PRESENCE OVER CONTENT: If unclear and short, acknowledge without inventing meaning
+  
+  // One-word inputs get soft acknowledgment
+  if (wordCount === 1 && /^(um|uh|hmm|mm|ah|oh|hey|hi|okay|ok|ya|yea|yeah|what|huh)$/i.test(cleaned)) {
     const softAcks = ["Mm-hmm.", "I'm here.", "Yeah?", "Mm."];
     speak(softAcks[Math.floor(Math.random() * softAcks.length)]);
     return;
+  }
+  
+  // Two-word unclear fragments get presence response (no API)
+  if (wordCount === 2) {
+    const unclearPairs = /^(hey just|go head|kindly \w+|what are|okay what|just \w+)$/i;
+    if (unclearPairs.test(cleaned)) {
+      const presenceResponses = ["Mm.", "I'm listening.", "Go on...", "Yeah..."];
+      speak(presenceResponses[Math.floor(Math.random() * presenceResponses.length)]);
+      return;
+    }
+  }
+  
+  // Three or fewer words and clearly incomplete? Presence, not content
+  if (wordCount <= 3) {
+    const fragmentPatterns = /^(what|why|how|tell|show|can you|are you|do you|I want|I need)$/i;
+    if (fragmentPatterns.test(cleaned)) {
+      const waitResponses = ["Mm-hmm?", "Go on...", "I'm here.", "Yeah?"];
+      speak(waitResponses[Math.floor(Math.random() * waitResponses.length)]);
+      return;
+    }
+  }
+  
   }
   
   // ✨ Graceful partial response for continuation prompts
