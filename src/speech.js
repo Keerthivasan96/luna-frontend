@@ -19,16 +19,16 @@ let interimBuffer = "";
 const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
 // ============================================
-// TIMING - Wait longer for complete sentences
+// TIMING - Balanced for smooth listening without too much wait
 // ============================================
 const CONFIG = {
-  baseSilence: isMobile ? 1200 : 1500,         // Wait 1.2-1.5 seconds (increased from 400)
-  shortPhraseSilence: 1800,                     // Wait 1.8 seconds for short phrases (increased from 600)
-  completeSilence: 800,                         // Wait 0.8 seconds after clear ending (increased from 220)
+  baseSilence: isMobile ? 800 : 900,           // Reduced from 1200/1500 (20% closer to 400)
+  shortPhraseSilence: 1200,                     // Reduced from 1800 (20% closer to 600)
+  completeSilence: 500,                         // Reduced from 800 (20% closer to 220)
   
-  minSendGap: 1500,                             // Minimum 1.5 seconds between sends (increased from 1100)
+  minSendGap: 1300,                             // Reduced from 1500 (20% closer to 1100)
   restartDelay: isMobile ? 200 : 200,
-  minWordsForEarlySend: 6,                      // Only send early if 6+ words (increased from 5)
+  minWordsForEarlySend: 5,                      // Back to 5 words (from 6)
 };
 
 console.log(`🎤 Speech: ${isMobile ? 'Mobile' : 'Desktop'} mode`);
