@@ -7,11 +7,12 @@
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { VRMLoaderPlugin, VRMUtils } from "@pixiv/three-vrm";
+import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 
 // ============================================
 // GLOBAL VARIABLES
 // ============================================
-let scene, camera, renderer;
+let scene, camera, renderer, controls;
 let currentVRM = null;
 let avatarReady = false;
 let isTalking = false;
@@ -33,10 +34,6 @@ let lookTimer = 0;
 let lookTarget = { x: 0, y: 0 };
 let currentLook = { x: 0, y: 0 };
 let swayTime = 0;
-
-// Camera rotation
-let cameraRotationTime = 0;
-let cameraRotationEnabled = true;
 
 // Lip sync
 let currentMouthOpenness = 0;
@@ -61,24 +58,24 @@ let isNodding = false;
 let nodProgress = 0;
 
 // ============================================
-// BASE ROTATIONS - Natural free-hand pose
-// Arms relaxed at sides, NOT T-pose
-// Slightly forward, natural shoulder position
+// BASE ROTATIONS - Natural resting pose
+// Arms hanging straight down at sides (NOT T-pose)
+// Key: Negative Z for right arm, Positive Z for left arm
 // ============================================
 const baseRotations = {
-  // Right arm - relaxed, slightly bent
-  rightUpperArm: { x: 0.2, y: 0.1, z: -0.15 },
-  rightLowerArm: { x: 0, y: 0.2, z: 0.1 },
-  rightHand: { x: -0.1, y: 0, z: 0 },
+  // Right arm - hanging down naturally
+  rightUpperArm: { x: 0.15, y: 0, z: -0.3 },    // Z negative = down to right
+  rightLowerArm: { x: 0, y: 0.1, z: 0 },         // Slight natural bend
+  rightHand: { x: -0.05, y: 0, z: 0 },           // Relaxed
   
-  // Left arm - relaxed, slightly bent
-  leftUpperArm: { x: 0.2, y: -0.1, z: 0.15 },
-  leftLowerArm: { x: 0, y: -0.2, z: -0.1 },
-  leftHand: { x: -0.1, y: 0, z: 0 },
+  // Left arm - hanging down naturally  
+  leftUpperArm: { x: 0.15, y: 0, z: 0.3 },       // Z positive = down to left
+  leftLowerArm: { x: 0, y: -0.1, z: 0 },         // Slight natural bend
+  leftHand: { x: -0.05, y: 0, z: 0 },            // Relaxed
   
-  // Body - slight natural tilt
+  // Body - natural stance
   hips: { x: 0, y: 0, z: 0 },
-  spine: { x: 0.02, y: 0, z: 0 },
+  spine: { x: 0.01, y: 0, z: 0 },
 };
 
 // ============================================
@@ -97,10 +94,13 @@ const CONFIG = {
   lookAtZ: 0,
   cameraFOV: 55,  // Slightly wider
   
-  // Camera rotation - slow cinematic
-  cameraRotationSpeed: 0.08,  // Very slow
-  cameraRotationRadius: 2.0,
-  cameraRotationHeight: 1.35,
+  // Mouse controls - zoom and rotate limits
+  controlsMinDistance: 1.5,   // Closest zoom
+  controlsMaxDistance: 3.5,   // Farthest zoom
+  controlsMaxPolarAngle: Math.PI / 1.8,  // Limit vertical rotation
+  controlsMinPolarAngle: Math.PI / 3,    // Limit vertical rotation
+  controlsEnablePan: false,   // No panning
+  controlsDampingFactor: 0.05, // Smooth movement
   
   // Avatar position
   avatarX: 0,
@@ -233,6 +233,20 @@ export function init3DScene(containerId = "canvas-container") {
   
   camera.position.set(CONFIG.cameraX, CONFIG.cameraY, CONFIG.cameraZ);
   camera.lookAt(CONFIG.lookAtX, CONFIG.lookAtY, CONFIG.lookAtZ);
+  
+  // Setup OrbitControls - manual mouse control
+  controls = new OrbitControls(camera, renderer.domElement);
+  controls.target.set(CONFIG.lookAtX, CONFIG.lookAtY, CONFIG.lookAtZ);
+  controls.enableDamping = true;
+  controls.dampingFactor = CONFIG.controlsDampingFactor;
+  controls.enablePan = CONFIG.controlsEnablePan;
+  controls.minDistance = CONFIG.controlsMinDistance;
+  controls.maxDistance = CONFIG.controlsMaxDistance;
+  controls.maxPolarAngle = CONFIG.controlsMaxPolarAngle;
+  controls.minPolarAngle = CONFIG.controlsMinPolarAngle;
+  controls.enableZoom = true;
+  controls.zoomSpeed = 0.5;
+  controls.rotateSpeed = 0.5;
   
   setupLights();
   window.addEventListener("resize", onResize, { passive: true });
@@ -448,7 +462,6 @@ function resetAnimationState() {
   gestureTimer = 0;
   lookTimer = 0;
   talkingGestureTimer = 0;
-  cameraRotationTime = 0;
   lookTarget = { x: 0, y: 0 };
   currentLook = { x: 0, y: 0 };
   isGesturing = false;
@@ -583,25 +596,6 @@ export function useFallbackEnvironment() {
 }
 
 // ============================================
-// CAMERA ROTATION - Replika style
-// Slow cinematic orbit around avatar
-// ============================================
-function updateCameraRotation(delta) {
-  if (!cameraRotationEnabled) return;
-  
-  cameraRotationTime += delta * CONFIG.cameraRotationSpeed;
-  
-  const x = Math.sin(cameraRotationTime) * CONFIG.cameraRotationRadius;
-  const z = Math.cos(cameraRotationTime) * CONFIG.cameraRotationRadius;
-  
-  camera.position.x = x;
-  camera.position.y = CONFIG.cameraRotationHeight;
-  camera.position.z = z;
-  
-  camera.lookAt(CONFIG.lookAtX, CONFIG.lookAtY, CONFIG.lookAtZ);
-}
-
-// ============================================
 // CAMERA & POSITION CONTROLS
 // ============================================
 export function setCameraPosition(x, y, z) {
@@ -633,15 +627,6 @@ export function setRoomScale(s) {
     currentRoom.scale.setScalar(s); 
     const box = new THREE.Box3().setFromObject(currentRoom); 
     currentRoom.position.y = -box.min.y; 
-  }
-}
-
-export function enableCameraRotation(enabled) {
-  cameraRotationEnabled = enabled;
-  if (!enabled) {
-    // Reset to default position
-    camera.position.set(CONFIG.cameraX, CONFIG.cameraY, CONFIG.cameraZ);
-    camera.lookAt(CONFIG.lookAtX, CONFIG.lookAtY, CONFIG.lookAtZ);
   }
 }
 
@@ -1224,8 +1209,8 @@ function animate() {
 
   const delta = clock.getDelta();
 
-  // Camera rotation (Replika style)
-  updateCameraRotation(delta);
+  // Update OrbitControls for smooth damping
+  if (controls) controls.update();
 
   if (currentVRM && avatarReady) {
     updateIdleAnimation(delta);
@@ -1290,6 +1275,7 @@ export function dispose3D() {
   if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
   if (currentVRM) { scene.remove(currentVRM.scene); VRMUtils.deepDispose(currentVRM.scene); currentVRM = null; }
   if (currentRoom) { scene.remove(currentRoom); currentRoom = null; }
+  if (controls) { controls.dispose(); controls = null; }
   if (renderer) { renderer.dispose(); if (renderer.domElement) renderer.domElement.remove(); renderer = null; }
   window.removeEventListener("resize", onResize);
   avatarReady = hasRoomLoaded = false;
@@ -1304,4 +1290,5 @@ export function getScene() { return scene; }
 export function hasRoom() { return hasRoomLoaded; }
 export function getCamera() { return camera; }
 export function getRenderer() { return renderer; }
+export function getControls() { return controls; }
 export function getConfig() { return CONFIG; }
