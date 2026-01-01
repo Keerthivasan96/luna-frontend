@@ -1,7 +1,7 @@
 // ============================================
-// speech.js - PRODUCTION FIXES
-// Fix #1: Stricter early-send gating
-// Fix #2: Better incomplete phrase detection
+// speech.js - FIXED VERSION
+// Removed: Broken alternative selection, dead grammar code
+// Kept: Fast timing (~0.5s), simple logic
 // ============================================
 
 let recognition = null;
@@ -19,22 +19,22 @@ let interimBuffer = "";
 const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
 // ============================================
-// TIMING - Balanced for smooth listening without too much wait
+// TIMING - FAST (tested values, ~0.5s feel)
 // ============================================
 const CONFIG = {
-  baseSilence: isMobile ? 800 : 900,           // Reduced from 1200/1500 (20% closer to 400)
-  shortPhraseSilence: 1200,                     // Reduced from 1800 (20% closer to 600)
-  completeSilence: 500,                         // Reduced from 800 (20% closer to 220)
+  baseSilence: isMobile ? 450 : 400,            // Fast base timing
+  shortPhraseSilence: 650,                       // Short phrases wait a bit more
+  completeSilence: 250,                          // Complete sentences send fast
   
-  minSendGap: 1300,                             // Reduced from 1500 (20% closer to 1100)
-  restartDelay: isMobile ? 200 : 200,
-  minWordsForEarlySend: 5,                      // Back to 5 words (from 6)
+  minSendGap: 1000,                              // Prevent double-sends
+  restartDelay: isMobile ? 150 : 120,
+  minWordsForEarlySend: 5,
 };
 
 console.log(`🎤 Speech: ${isMobile ? 'Mobile' : 'Desktop'} mode`);
 
 /**
- * STRICTER intent detection
+ * Check if text has clear complete intent
  */
 function hasCompleteIntent(text) {
   const lower = text.toLowerCase().trim();
@@ -45,86 +45,77 @@ function hasCompleteIntent(text) {
     return true;
   }
   
-  // Complete statement patterns (must be 4+ words)
-  const completeStatements = [
-    /^(my name is|i am|i'm) \w+$/i,
-    /^(i live in|i work at|i go to) /i,
-    /^(i like|i love|i hate|i want|i need) /i,
-    /^(yes|no|yeah|yep|nope|okay|sure)$/i,
+  // One-word complete responses
+  if (/^(yes|no|yeah|yep|nope|okay|sure|hi|hey|hello|bye|thanks)$/i.test(lower)) {
+    return true;
+  }
+  
+  // Common complete short phrases
+  const completePatterns = [
+    /^(my name is|i am|i'm) \w+/i,
+    /^(i'?m (good|fine|great|okay|tired|sad|happy))/i,
+    /^(that'?s (good|great|cool|nice|fine|okay))/i,
+    /^(sounds (good|great|fine))/i,
+    /^(thank you|thanks|no thanks|yes please)/i,
   ];
   
-  return completeStatements.some(pattern => pattern.test(lower));
+  return completePatterns.some(pattern => pattern.test(lower));
 }
 
 /**
- * Detect if phrase is clearly incomplete
+ * Detect truly incomplete phrases that need more input
+ * SIMPLIFIED - only catch obvious fragments
  */
 function isIncompletePhrase(text) {
   const lower = text.toLowerCase().trim();
+  const words = lower.split(/\s+/).length;
   
-  // ONLY flag as incomplete if it's a clear fragment that can't stand alone
-  const trulyIncomplete = [
-    /^(tell me a|give me a|show me a)$/i,  // Needs object
-    /^(because|so that|in order to)$/i,     // Needs completion
-    /^(I want to|I need to|I'm going to)$/i, // Needs verb
-  ];
+  // Single question words that clearly need more
+  if (words === 1 && /^(what|why|how|when|where|who|which)$/i.test(lower)) {
+    return true;
+  }
   
-  return trulyIncomplete.some(pattern => pattern.test(lower));
+  // Clear incomplete starters (2 words max)
+  if (words <= 2) {
+    const incompleteStarters = [
+      /^(tell me)$/i,
+      /^(can you|could you|would you|will you)$/i,
+      /^(i want|i need|i think|i'm going)$/i,
+      /^(what if|how about)$/i,
+    ];
+    return incompleteStarters.some(pattern => pattern.test(lower));
+  }
+  
+  return false;
 }
 
+/**
+ * Get timeout based on text - FAST
+ */
 function getTimeout(text) {
   const words = text.trim().split(/\s+/).filter(w => w);
   const wordCount = words.length;
-  const lastChar = text.trim().slice(-1);
   
-  // Clear sentence ending - SEND
-  if (['.', '!', '?'].includes(lastChar)) {
-    console.log(`✅ Complete sentence (${wordCount} words)`);
+  // Clear sentence ending - SEND FAST
+  if (hasCompleteIntent(text)) {
+    console.log(`✅ Complete (${wordCount} words) - fast send`);
     return CONFIG.completeSilence;
   }
   
-  // Check if clearly incomplete
+  // Check if clearly incomplete - wait a bit more
   if (isIncompletePhrase(text)) {
-    console.log(`⏳ Incomplete phrase detected - waiting`);
+    console.log(`⏳ Incomplete phrase - waiting`);
     return CONFIG.shortPhraseSilence;
   }
   
-  // One-word - only if it's a complete response
-  if (wordCount === 1) {
-    const oneWordComplete = /^(yes|no|yeah|yep|nope|ok|okay|sure|hi|hey|hello|bye|thanks|please)$/i;
-    if (oneWordComplete.test(text.toLowerCase())) {
-      console.log(`✅ Quick one-word response`);
-      return CONFIG.completeSilence;
-    }
-    console.log(`⏳ Single word - waiting for more`);
+  // 1-2 words that aren't complete - wait briefly
+  if (wordCount <= 2) {
+    console.log(`⏳ Short (${wordCount} words) - brief wait`);
     return CONFIG.shortPhraseSilence;
   }
   
-  // 2-3 words - be VERY cautious, wait longer
-  if (wordCount === 2 || wordCount === 3) {
-    const shortComplete = /^(i'?m (good|fine|great|okay|tired)|that'?s (good|great|cool|nice)|sounds (good|great)|yes please|no thanks|thank you|you too|not really|right now|of course)$/i;
-    if (shortComplete.test(text.toLowerCase())) {
-      console.log(`✅ Complete short phrase (${wordCount} words)`);
-      return CONFIG.baseSilence;
-    }
-    console.log(`⏳ ${wordCount} words - likely incomplete, waiting`);
-    return CONFIG.shortPhraseSilence;  // Wait 1.2 seconds (longer than before)
-  }
-  
-  // 4 words - still cautious, wait a bit
-  if (wordCount === 4) {
-    console.log(`📝 4 words - waiting to confirm complete`);
-    return CONFIG.baseSilence;  // Wait 1.2-1.5 seconds
-  }
-  
-  // 5 words - still wait
-  if (wordCount === 5) {
-    console.log(`📝 5 words - waiting to confirm complete`);
-    return CONFIG.baseSilence;  // Wait 1.2-1.5 seconds
-  }
-  
-  // 6+ words - likely complete but still wait a reasonable time
-  console.log(`📝 Normal sentence (${wordCount} words)`);
+  // 3+ words - use base timing
+  console.log(`📝 Normal (${wordCount} words)`);
   return CONFIG.baseSilence;
 }
 
@@ -154,16 +145,10 @@ export function startListening(onFinal, options = {}) {
   recognition = new SpeechRecognition();
   recognition.continuous = !isMobile;
   recognition.interimResults = true;
-  recognition.maxAlternatives = 3;  // Get 3 alternatives for better accuracy
-  recognition.lang = options.lang || "en-IN";  // Changed to en-IN for Indian English
-  
-  // Add grammar hints for better recognition (if supported)
-  if (recognition.grammars !== undefined) {
-    const grammar = '#JSGF V1.0; grammar words; public <word> = story | planet | solar | system | tell | explain | what | how;';
-    const speechRecognitionList = new (window.SpeechGrammarList || window.webkitSpeechGrammarList)();
-    speechRecognitionList.addFromString(grammar, 1);
-    recognition.grammars = speechRecognitionList;
-  }
+  recognition.maxAlternatives = 1;  // FIXED: Just use first result, don't pick alternatives
+  recognition.lang = options.lang || "en-US";  // FIXED: Use en-US (better for most cases)
+
+  // REMOVED: Grammar hints (deprecated API, does nothing)
 
   recognition.onstart = () => {
     console.log("🎤 Listening...");
@@ -179,28 +164,9 @@ export function startListening(onFinal, options = {}) {
     for (let i = event.resultIndex; i < event.results.length; i++) {
       const result = event.results[i];
       
-      // Try to pick the best alternative (highest confidence or longest)
-      let bestTranscript = result[0].transcript;
-      let bestConfidence = result[0].confidence || 0;
-      
-      // Check alternatives for better match
-      for (let j = 1; j < result.length; j++) {
-        const alt = result[j];
-        const altConfidence = alt.confidence || 0;
-        const altLength = alt.transcript.trim().split(/\s+/).length;
-        const bestLength = bestTranscript.trim().split(/\s+/).length;
-        
-        // Prefer longer, more complete sentences with decent confidence
-        if (altLength > bestLength && altConfidence > 0.5) {
-          bestTranscript = alt.transcript;
-          bestConfidence = altConfidence;
-        } else if (altConfidence > bestConfidence + 0.1) {
-          bestTranscript = alt.transcript;
-          bestConfidence = altConfidence;
-        }
-      }
-      
-      const text = bestTranscript;
+      // FIXED: Just use first result - don't try to pick "better" alternatives
+      // The alternative picking logic was making STT WORSE
+      const text = result[0].transcript;
 
       if (result.isFinal) {
         final += text + " ";
@@ -221,26 +187,17 @@ export function startListening(onFinal, options = {}) {
       console.log("🎤 ...", interim.substring(0, 50));
     }
 
-    // ⚡ STRICTER early send - only on clear complete intent
+    // Early send for clearly complete longer sentences
     if (
       interim &&
-      interim.length > 12 &&                    // Longer threshold
+      interim.length > 15 &&
       Date.now() - lastSendTime > CONFIG.minSendGap
     ) {
       const words = interim.trim().split(/\s+/).length;
       
-      // Must be 5+ words AND have complete intent
       if (words >= CONFIG.minWordsForEarlySend && hasCompleteIntent(interim)) {
-        console.log("⚡ Early send (complete intent):", interim);
+        console.log("⚡ Early send:", interim);
         finalize((pendingText + interim).trim());
-        return;
-      }
-      
-      // Block early send if clearly incomplete
-      if (isIncompletePhrase(interim)) {
-        console.log("🚫 Blocking early send - incomplete phrase");
-        const timeout = getTimeout(fullText);
-        silenceTimer = setTimeout(() => finalize(fullText), timeout);
         return;
       }
     }
