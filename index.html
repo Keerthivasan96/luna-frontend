@@ -4,9 +4,9 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <meta name="theme-color" content="#667eea" />
-  <meta name="description" content="English Learning Companion - Practice English with your AI friend" />
+  <meta name="description" content="Luna - Your AI Companion" />
   
-  <title>English Learning Companion ✨</title>
+  <title>Luna ✨</title>
   
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -19,13 +19,14 @@
 <body>
   
   <div class="immersive-container">
-  <!-- Tagline (top-left) -->
-  <div class="tagline">
-  <div class="tagline-main">The AI companion who cares</div>
-  <div class="tagline-sub">Always here to listen and talk.<br>Always on your side.</div>
-</div>
+    <!-- Tagline (top-left) -->
+    <div class="tagline">
+      <div class="tagline-main">The AI companion who cares</div>
+      <div class="tagline-sub">Always here to listen and talk.<br>Always on your side.</div>
+    </div>
+    
     <!-- 3D Avatar Container -->
-    <div id="canvas-container" aria-label="Your English Companion">
+    <div id="canvas-container" aria-label="Your AI Companion">
       <div id="avatar-scroll-safe"></div>
       
       <!-- Loading Indicator -->
@@ -33,18 +34,6 @@
         <div class="loading-spinner"></div>
         <span>Loading...</span>
       </div>
-    </div>
-
-    <!-- Microphone Button (bottom-left) -->
-    <div id="mic-container">
-      <button id="micBtn" class="mic-small" title="Start conversation" aria-label="Start or pause conversation">
-        🎤
-      </button>
-    </div>
-
-    <!-- AI Reply Caption (bottom center) -->
-    <div id="chatCaption" class="chat-caption" role="status" aria-live="polite">
-      Ready to chat! 💭
     </div>
 
     <!-- Status Message (top center) -->
@@ -57,6 +46,44 @@
       ⋮
     </button>
     
+    <!-- Text Input Bar (bottom - Replika style) -->
+    <div id="chatInputBar" class="chat-input-bar">
+      <button id="enterRoomBtn" class="enter-room-btn" title="Enter room view" aria-label="Enter immersive room view">
+        🏠
+      </button>
+      
+      <div class="input-wrapper">
+        <input 
+          type="text" 
+          id="chatInput" 
+          class="chat-input" 
+          placeholder="Type a message..." 
+          aria-label="Chat input"
+        />
+        <button id="sendBtn" class="send-btn" title="Send message" aria-label="Send message">
+          ✈️
+        </button>
+        <button id="micToggleBtn" class="mic-toggle-btn active" title="Voice input" aria-label="Toggle voice input">
+          🎤
+        </button>
+      </div>
+    </div>
+
+    <!-- AI Reply Caption (above input) -->
+    <div id="chatCaption" class="chat-caption" role="status" aria-live="polite">
+      Ready to chat! 💭
+    </div>
+    
+    <!-- Room View Controls (hidden by default) -->
+    <div id="roomControls" class="room-controls" style="display: none;">
+      <button id="exitRoomBtn" class="exit-room-btn" title="Exit room view" aria-label="Back to chat view">
+        ← Back to Chat
+      </button>
+      <button id="exploreBtn" class="explore-btn" title="Zoom out to explore" aria-label="Explore room">
+        🔍 Explore
+      </button>
+    </div>
+    
     <!-- Settings Menu Panel -->
     <div id="menuPanel" class="menu-panel" role="dialog" aria-label="Settings">
       <div class="menu-header">
@@ -65,6 +92,25 @@
       </div>
       
       <div class="menu-content">
+        
+        <!-- Reply Preference -->
+        <div class="menu-item">
+          <label>Reply Preference</label>
+          <div class="reply-preference-grid">
+            <button class="reply-pref-btn" data-pref="text" title="Text replies only">
+              💬 Text
+            </button>
+            <button class="reply-pref-btn active" data-pref="voice" title="Voice replies only">
+              🎤 Voice
+            </button>
+            <button class="reply-pref-btn" data-pref="both" title="Both text and voice">
+              ✨ Both
+            </button>
+          </div>
+        </div>
+
+        <!-- Divider -->
+        <div class="menu-divider"></div>
         
         <!-- Avatar Selection -->
         <div class="menu-item">
