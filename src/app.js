@@ -1,6 +1,6 @@
 // ============================================
-// app.js - EMOTIONAL COMPANION (FULLY CORRECTED)
-// Focus: Caring presence over mechanical cleverness
+// app.js - EMOTIONAL COMPANION (REPLIKA STYLE)
+// Two-interface flow with all existing features
 // ============================================
 
 import { startListening, stopListening, setSpeaking } from "./speech.js";
@@ -10,8 +10,17 @@ import {
   avatarStartTalking, 
   avatarStopTalking,
   loadRoomModel,
-  useFallbackEnvironment
+  useFallbackEnvironment,
+  getControls
 } from "./threejs-avatar-3d.js";
+import { 
+  initInterfaceManager, 
+  addMessageToUI, 
+  addAssistantMessage,
+  switchToConversation,
+  getCurrentInterface,
+  getReplyPreference
+} from "./interface-manager.js";
 
 const API_URL = "https://luna-backend-two.vercel.app/api/generate";
 const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
@@ -19,7 +28,6 @@ const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/
 console.log(`📱 Device: ${isMobile ? 'Mobile' : 'Desktop'}`);
 
 // UI ELEMENTS
-const micBtn = document.getElementById("micBtn");
 const menuToggle = document.getElementById("menuToggle");
 const menuPanel = document.getElementById("menuPanel");
 const menuOverlay = document.getElementById("menuOverlay");
@@ -28,12 +36,9 @@ const clearBtn = document.getElementById("clearBtn");
 const demoLessonBtn = document.getElementById("demoLessonBtn");
 const musicToggle = document.getElementById("musicToggle");
 const musicVolumeSlider = document.getElementById("musicVolume");
-const statusEl = document.getElementById("status");
-const chatCaption = document.getElementById("chatCaption");
 const avatarOptions = document.querySelectorAll(".avatar-option");
 
 // STATE
-let isRunning = false;
 let isSpeaking = false;
 let isProcessing = false;
 let conversationHistory = [];
@@ -145,23 +150,6 @@ function lowerMusic() {
 
 function restoreMusic() {
   if (backgroundMusic && isMusicPlaying) backgroundMusic.volume = musicVolume;
-}
-
-// CAPTION
-function showCaption(text) {
-  if (!chatCaption) return;
-  chatCaption.textContent = text;
-  chatCaption.classList.add("active");
-}
-
-function hideCaption() {
-  if (!chatCaption) return;
-  chatCaption.classList.remove("active");
-}
-
-// STATUS
-function setStatus(text) {
-  if (statusEl) statusEl.textContent = text;
 }
 
 // ============================================
@@ -330,15 +318,15 @@ function buildPrompt(userText) {
       break;
 
     case "joyful":
-      emotionalGuidance = `They’re in a good mood. Match their energy naturally, without overdoing it.`;
+      emotionalGuidance = `They're in a good mood. Match their energy naturally, without overdoing it.`;
       break;
 
     case "curious":
-      emotionalGuidance = `They’re curious or exploring. Be open and go along with their ideas.`;
+      emotionalGuidance = `They're curious or exploring. Be open and go along with their ideas.`;
       break;
 
     case "seeking":
-      emotionalGuidance = `They’re looking for connection. Be present and available.`;
+      emotionalGuidance = `They're looking for connection. Be present and available.`;
       break;
 
     default:
@@ -366,7 +354,6 @@ CRITICAL RULES:
 6. Accept broken English completely - respond to intent
 7. Be genuinely curious sometimes - ask follow-ups when natural
 8. Mix up response length naturally (not always the same pattern)
-
 `;
 
   return `You are Luna, a cheerful AI companion.
@@ -399,7 +386,6 @@ Respond as Luna.
 Be clear, calm, and human.
 `;
 }
-
 
 // VOICE
 function getBestVoice() {
@@ -477,9 +463,6 @@ function speak(text) {
   const words = cleanForSpeech.split(/\s+/).length;
   console.log(`🔊 Speaking: "${cleanForSpeech.substring(0, 60)}..." (${words} words)`);
   
-  showCaption(originalText);
-  setStatus("Speaking... 💬");
-  
   const utterance = new SpeechSynthesisUtterance(cleanForSpeech);
   utterance.lang = "en-US";
   utterance.volume = 1.0;
@@ -493,7 +476,6 @@ function speak(text) {
     console.log("🔊 Started");
     isSpeaking = true;
     setSpeaking(true);
-    stopListening();
     avatarStartTalking();
     lowerMusic();
   };
@@ -503,23 +485,8 @@ function speak(text) {
     isSpeaking = false;
     setSpeaking(false);
     avatarStopTalking();
-    hideCaption();
     restoreMusic();
     isProcessing = false;
-    
-    if (isRunning) {
-      setStatus("Listening... 👂");
-      
-      const turnDelay = isMobile ? 450 : 280;
-      
-      setTimeout(() => {
-        if (isRunning && !isSpeaking && !isProcessing) {
-          startListeningCycle();
-        }
-      }, turnDelay);
-    } else {
-      setStatus("Tap mic to talk 💭");
-    }
   };
 
   utterance.onerror = (e) => {
@@ -527,13 +494,8 @@ function speak(text) {
     isSpeaking = false;
     setSpeaking(false);
     avatarStopTalking();
-    hideCaption();
     restoreMusic();
     isProcessing = false;
-    
-    if (isRunning) {
-      setTimeout(startListeningCycle, 500);
-    }
   };
 
   window.speechSynthesis.speak(utterance);
@@ -544,36 +506,7 @@ function stopSpeaking() {
   isSpeaking = false;
   setSpeaking(false);
   avatarStopTalking();
-  hideCaption();
   restoreMusic();
-}
-
-// SPEECH RECOGNITION
-function startListeningCycle() {
-  if (!isRunning || isSpeaking || isProcessing) {
-    console.log(`🚫 Not starting: running=${isRunning}, speaking=${isSpeaking}, processing=${isProcessing}`);
-    return;
-  }
-  
-  console.log("🎤 Listening...");
-  setStatus("Listening... 👂");
-  
-  startListening(onSpeech, {
-    continuous: true,
-    lang: "en-US"
-  });
-}
-
-function onSpeech(text, isFinal) {
-  if (!text?.trim() || !isFinal) return;
-  
-  if (isProcessing) {
-    console.log("⏳ Processing, ignoring");
-    return;
-  }
-  
-  console.log(`🎤 You: "${text}"`);
-  sendMessage(text);
 }
 
 // ============================================
@@ -599,7 +532,6 @@ function isValidResponse(reply, userText) {
   }
   
   // Single word responses are valid if they're acknowledgments
-  // Strip punctuation for checking
   const wordOnly = trimmed.replace(/[.,!?]+$/, '');
   const validOneWord = /^(yeah|yep|nope|okay|sure|maybe|totally|absolutely|definitely|honestly|hey|hi|mm|mhm|oh|aww|cool|nice)$/i;
   if (wordCount === 1 && validOneWord.test(wordOnly)) {
@@ -616,10 +548,10 @@ function isValidResponse(reply, userText) {
   console.warn(`❌ Invalid response: too short (${wordCount} words)`);
   return false;
 }
-// ============================================
-// CLARIFICATION FALLBACK (VOICE-FIRST)
-// ============================================
 
+// ============================================
+// CLARIFICATION FALLBACK
+// ============================================
 function needsClarification(text) {
   if (!text) return true;
   
@@ -627,25 +559,20 @@ function needsClarification(text) {
   const words = cleaned.split(/\s+/);
   
   // ONLY ask for clarification on truly empty/gibberish input
-  // Everything else should be accepted and responded to
-  
-  // Less than 1 word or pure noise
   if (words.length === 0 || cleaned.length < 2) return true;
   
   // Pure gibberish (only consonants/no vowels in 4+ chars)
   if (cleaned.length >= 4 && !/[aeiou]/i.test(cleaned)) return true;
   
-  // ACCEPT EVERYTHING ELSE
-  // Even: "what" "how" "I" "hmm" "tell me" etc.
   return false;
 }
 
 function getClarificationReply() {
   const replies = [
-    "Hmm, I didn’t fully catch that. Can you say it another way?",
+    "Hmm, I didn't fully catch that. Can you say it another way?",
     "Sorry, I think I missed part of that. What did you mean?",
     "One second — can you rephrase that for me?",
-    "I’m not sure I understood. Say it again, slowly."
+    "I'm not sure I understood. Say it again, slowly."
   ];
 
   return replies[Math.floor(Math.random() * replies.length)];
@@ -657,11 +584,27 @@ function getClarificationReply() {
 async function sendMessage(text) {
   if (!text?.trim() || isProcessing) return;
 
+  // Auto-switch to conversation interface if still in preview
+  if (getCurrentInterface() === 'preview') {
+    switchToConversation();
+    // Small delay for UI transition
+    await new Promise(resolve => setTimeout(resolve, 400));
+  }
+
   // 🔒 Clarification gate (BEFORE LLM)
   if (needsClarification(text)) {
     console.log("🟡 Clarification needed, skipping API");
     const clarification = getClarificationReply();
-    speak(clarification);
+    
+    // Add to UI
+    addMessageToUI('user', text);
+    addMessageToUI('assistant', clarification);
+    
+    // Speak if voice preference
+    const replyPref = getReplyPreference();
+    if (replyPref === 'voice' || replyPref === 'both') {
+      speak(clarification);
+    }
     return;
   }
 
@@ -673,17 +616,15 @@ async function sendMessage(text) {
     const singleWordAcks = /^(yeah|yep|okay|ok|sure|mm|hmm|uh|ah|oh)$/i;
     if (singleWordAcks.test(cleaned)) {
       const responses = ["Mm-hmm.", "Yeah?", "I'm here."];
-      speak(responses[Math.floor(Math.random() * responses.length)]);
-      return;
-    }
-  }
-  
-  // For 2-3 word unclear fragments, give gentle prompt (no API call)
-  if (wordCount >= 2 && wordCount <= 3) {
-    const unclearFragments = /^(hey just|go head|tell me|what are|you are|can you|no please|okay what)$/i;
-    if (unclearFragments.test(cleaned)) {
-      const prompts = ["Tell me more?", "Go on...", "What's on your mind?", "I'm listening."];
-      speak(prompts[Math.floor(Math.random() * prompts.length)]);
+      const response = responses[Math.floor(Math.random() * responses.length)];
+      
+      addMessageToUI('user', text);
+      addMessageToUI('assistant', response);
+      
+      const replyPref = getReplyPreference();
+      if (replyPref === 'voice' || replyPref === 'both') {
+        speak(response);
+      }
       return;
     }
   }
@@ -691,11 +632,12 @@ async function sendMessage(text) {
   isProcessing = true;
   stopSpeaking();
 
-  
   conversationHistory.push({ role: "user", content: text });
   saveHistory();
   
-  setStatus("Thinking... 💭");
+  // Add user message to UI
+  addMessageToUI('user', text);
+  
   avatarStartTalking();
   console.log(`📤 Sending: "${text}"`);
 
@@ -722,17 +664,17 @@ async function sendMessage(text) {
     const data = await response.json();
     let reply = data.reply || data.text || data.content || "";
     
-    // Clean up LLM artifacts (keep emojis for caption)
+    // Clean up LLM artifacts
     reply = reply
       .replace(/^(Luna:|Assistant:)/i, "")
       .replace(/\*[^*]+\*/g, "")
       .trim();
     
-    // Enforce length limit (never cut mid-sentence)
+    // Enforce length limit
     reply = enforceResponseLength(reply, 30);
     
-    const wordCount = reply.trim().split(/\s+/).length;
-    console.log(`📥 Reply: ${wordCount} words`);
+    const replyWordCount = reply.trim().split(/\s+/).length;
+    console.log(`📥 Reply: ${replyWordCount} words`);
     console.log(`📝 "${reply.substring(0, 80)}"`);
 
     if (!isValidResponse(reply, text)) {
@@ -743,7 +685,9 @@ async function sendMessage(text) {
     saveHistory();
     
     avatarStopTalking();
-    speak(reply);
+    
+    // Use interface manager to handle reply (respects user preference)
+    addAssistantMessage(reply);
 
   } catch (err) {
     console.error("❌ Error:", err.message);
@@ -765,8 +709,12 @@ async function sendMessage(text) {
       errorResponse = errorResponses[Math.floor(Math.random() * errorResponses.length)];
     }
     
-    setStatus("Oops! 😅");
-    speak(errorResponse);
+    addMessageToUI('assistant', errorResponse);
+    
+    const replyPref = getReplyPreference();
+    if (replyPref === 'voice' || replyPref === 'both') {
+      speak(errorResponse);
+    }
   }
 }
 
@@ -806,31 +754,17 @@ musicVolumeSlider?.addEventListener("input", (e) => {
   if (backgroundMusic) backgroundMusic.volume = musicVolume;
 });
 
-micBtn?.addEventListener("click", () => {
-  if (isRunning) {
-    isRunning = false;
-    isProcessing = false;
-    stopListening();
-    stopSpeaking();
-    micBtn.classList.remove("active");
-    micBtn.textContent = "🎤";
-    setStatus("Tap to talk 💭");
-    console.log("⏸️ Stopped");
-  } else {
-    isRunning = true;
-    micBtn.classList.add("active");
-    micBtn.textContent = "⏸️";
-    console.log("▶️ Started");
-    startListeningCycle();
-  }
-});
-
 clearBtn?.addEventListener("click", () => {
   if (!confirm("Clear chat?")) return;
   clearHistory();
   stopSpeaking();
-  hideCaption();
-  setStatus("Fresh start! 🌟");
+  
+  // Clear messages from UI
+  const messagesContainer = document.getElementById('messagesContainer');
+  if (messagesContainer) {
+    messagesContainer.innerHTML = '';
+  }
+  
   menuPanel?.classList.remove("active");
   menuOverlay?.classList.remove("active");
   console.log("🗑️ Cleared");
@@ -843,7 +777,26 @@ demoLessonBtn?.addEventListener("click", () => {
     "What's something good that happened recently?",
     "Tell me something you're looking forward to.",
   ];
-  speak(prompts[Math.floor(Math.random() * prompts.length)]);
+  const prompt = prompts[Math.floor(Math.random() * prompts.length)];
+  
+  // Auto-switch to conversation and add message
+  if (getCurrentInterface() === 'preview') {
+    switchToConversation();
+    setTimeout(() => {
+      addMessageToUI('assistant', prompt);
+      const replyPref = getReplyPreference();
+      if (replyPref === 'voice' || replyPref === 'both') {
+        speak(prompt);
+      }
+    }, 400);
+  } else {
+    addMessageToUI('assistant', prompt);
+    const replyPref = getReplyPreference();
+    if (replyPref === 'voice' || replyPref === 'both') {
+      speak(prompt);
+    }
+  }
+  
   menuPanel?.classList.remove("active");
   menuOverlay?.classList.remove("active");
 });
@@ -857,9 +810,18 @@ avatarOptions.forEach(btn => {
   });
 });
 
+// ============================================
+// EXPOSE GLOBAL HANDLERS FOR INTERFACE MANAGER
+// ============================================
+window.handleUserMessage = sendMessage;
+window.speakText = speak;
+window.avatarModule = { getControls };
+
+// ============================================
 // INITIALIZE
+// ============================================
 async function init() {
-  console.log("🚀 Starting Luna...");
+  console.log("🚀 Starting Luna (Replika Style)...");
   console.log(`📡 API: ${API_URL}`);
   
   currentAvatarPath = loadAvatar();
@@ -888,11 +850,14 @@ async function init() {
     btn.classList.toggle("active", btn.dataset.avatar === currentAvatarPath);
   });
 
+  // Initialize interface manager (two-interface flow)
+  initInterfaceManager();
+
   initMusic();
   updateMusicUI();
   
   const hasHistory = loadHistory();
-  setStatus(hasHistory ? "Welcome back! 💭" : "Ready! 💭");
+  console.log(hasHistory ? "📂 Welcome back!" : "🌟 Fresh start!");
 
   if (window.speechSynthesis.getVoices().length === 0) {
     window.speechSynthesis.onvoiceschanged = () => {
@@ -904,14 +869,10 @@ async function init() {
     await navigator.mediaDevices.getUserMedia({ audio: true });
     console.log("✅ Mic ready");
   } catch (e) {
-    console.log("❌ Mic denied");
+    console.log("⚠️ Mic access needed for voice features");
   }
 
-  console.log("✅ Ready!");
-  
-  setTimeout(() => {
-    speak("Hey. I'm here.");
-  }, 1000);
+  console.log("✅ Luna ready!");
 }
 
 if (document.readyState === "loading") {
