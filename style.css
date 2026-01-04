@@ -1,26 +1,34 @@
 /* ============================================
-   style.css - REPLIKA STYLE
-   Luna AI Companion
+   LUNA - REPLIKA-STYLE CSS
+   Two-interface flow with glassmorphism
    ============================================ */
 
 /* ============================================
    CSS VARIABLES
    ============================================ */
 :root {
-  /* Colors */
-  --primary: #667eea;
-  --primary-dark: #5a67d8;
-  --secondary: #764ba2;
-  --accent: #f093fb;
+  /* Lavender & Muted Tones */
+  --primary: #9B8AC4;
+  --primary-light: #C4B8D8;
+  --primary-dark: #7A6BA0;
+  --accent: #B8A8D4;
   
-  /* Surfaces */
-  --surface: rgba(255, 255, 255, 0.95);
-  --surface-dark: rgba(0, 0, 0, 0.6);
+  /* Glass effect */
+  --glass-bg: rgba(255, 255, 255, 0.18);
+  --glass-bg-strong: rgba(255, 255, 255, 0.25);
+  --glass-border: rgba(255, 255, 255, 0.25);
+  --glass-blur: blur(20px);
   
-  /* Text */
+  /* Soft colors */
   --text-primary: #2d3748;
-  --text-secondary: #4a5568;
-  --text-light: #718096;
+  --text-secondary: #6b7280;
+  --text-light: #9ca3af;
+  --white-soft: rgba(255, 255, 255, 0.95);
+  
+  /* Shadows - soft and diffused */
+  --shadow-soft: 0 8px 32px rgba(155, 138, 196, 0.15);
+  --shadow-medium: 0 12px 48px rgba(155, 138, 196, 0.2);
+  --shadow-glow: 0 0 24px rgba(155, 138, 196, 0.3);
   
   /* Spacing */
   --space-xs: 4px;
@@ -33,18 +41,8 @@
   --radius-sm: 8px;
   --radius-md: 12px;
   --radius-lg: 16px;
-  --radius-xl: 24px;
-  --radius-full: 50px;
-  
-  /* Shadows */
-  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.1);
-  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.15);
-  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.2);
-  
-  /* Glass Effect */
-  --glass-bg: rgba(255, 255, 255, 0.15);
-  --glass-border: rgba(255, 255, 255, 0.25);
-  --glass-blur: blur(12px);
+  --radius-xl: 20px;
+  --radius-full: 9999px;
 }
 
 /* ============================================
@@ -60,13 +58,13 @@ html, body {
   width: 100%;
   height: 100%;
   overflow: hidden;
-  font-family: 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
 body {
-  background: transparent;
+  background: linear-gradient(135deg, #E8E0F0 0%, #D4C4E8 100%);
 }
 
 /* ============================================
@@ -116,7 +114,7 @@ body {
   flex-direction: column;
   align-items: center;
   gap: 16px;
-  color: white;
+  color: var(--primary-dark);
   font-size: 16px;
   font-weight: 600;
   z-index: 100;
@@ -129,8 +127,8 @@ body {
 .loading-spinner {
   width: 48px;
   height: 48px;
-  border: 4px solid rgba(255, 255, 255, 0.3);
-  border-top-color: white;
+  border: 4px solid rgba(155, 138, 196, 0.2);
+  border-top-color: var(--primary);
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -140,39 +138,305 @@ body {
 }
 
 /* ============================================
-   CHAT INPUT BAR - Replika Style
+   PREVIEW INTERFACE (Default)
+   Quiet, calm, presence-only
    ============================================ */
-.chat-input-bar {
+.preview-interface {
   position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  z-index: 90;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  padding-bottom: 80px;
+  pointer-events: none;
+}
+
+.preview-interface > * {
+  pointer-events: auto;
+}
+
+/* ============================================
+   GREETING BUBBLE (Near Avatar)
+   ============================================ */
+.greeting-bubble {
+  position: absolute;
+  top: 35%;
+  left: 50%;
+  transform: translateX(-50%);
+  
+  padding: 12px 20px;
+  background: var(--glass-bg-strong);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-soft);
+  
+  opacity: 0;
+  animation: fadeInBubble 0.8s ease forwards 0.5s;
+}
+
+.greeting-bubble p {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text-primary);
+  text-align: center;
+}
+
+@keyframes fadeInBubble {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+/* ============================================
+   START CONVERSATION BUTTON (Primary CTA)
+   Glass pill with soft glow
+   ============================================ */
+.start-conversation-btn {
+  padding: 16px 32px;
+  background: var(--glass-bg-strong);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-full);
+  
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--primary-dark);
+  cursor: pointer;
   
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 16px 20px;
+  gap: 10px;
   
-  background: rgba(255, 255, 255, 0.98);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: var(--shadow-soft);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   
-  box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.1);
+  opacity: 0;
+  animation: fadeInButton 0.8s ease forwards 0.8s;
 }
 
-.enter-room-btn {
+.start-conversation-btn:hover {
+  background: rgba(255, 255, 255, 0.35);
+  box-shadow: var(--shadow-glow);
+  transform: translateY(-2px);
+}
+
+.start-conversation-btn:active {
+  transform: translateY(0);
+}
+
+.btn-icon {
+  font-size: 20px;
+}
+
+@keyframes fadeInButton {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ============================================
+   EXPLORE BUTTON (Small icon, bottom right)
+   ============================================ */
+.explore-icon-btn {
+  position: absolute;
+  bottom: 24px;
+  right: 24px;
+  
   width: 48px;
   height: 48px;
+  
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-full);
+  
+  font-size: 18px;
+  cursor: pointer;
+  
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  box-shadow: var(--shadow-soft);
+  transition: all 0.2s ease;
+}
+
+.explore-icon-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.05);
+}
+
+.explore-icon-btn.active {
+  background: rgba(155, 138, 196, 0.3);
+  border-color: var(--primary);
+}
+
+/* ============================================
+   CONVERSATION INTERFACE
+   Floating glass chat panel
+   ============================================ */
+.conversation-interface {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  pointer-events: none;
+  
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  padding: 24px;
+}
+
+.conversation-interface > * {
+  pointer-events: auto;
+}
+
+/* ============================================
+   CHAT PANEL (Floating Glass)
+   Bottom right, doesn't cover avatar
+   ============================================ */
+.chat-panel {
+  width: 400px;
+  max-height: 500px;
+  
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-xl);
+  
+  box-shadow: var(--shadow-medium);
+  
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  
+  opacity: 0;
+  transform: translateY(20px) scale(0.95);
+  animation: slideInPanel 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes slideInPanel {
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* ============================================
+   MESSAGES CONTAINER
+   ============================================ */
+.messages-container {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  
+  /* Custom scrollbar */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(155, 138, 196, 0.3) transparent;
+}
+
+.messages-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.messages-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.messages-container::-webkit-scrollbar-thumb {
+  background: rgba(155, 138, 196, 0.3);
+  border-radius: 3px;
+}
+
+/* ============================================
+   MESSAGE BUBBLES
+   Light, floating, breathable
+   ============================================ */
+.message {
+  max-width: 80%;
+  padding: 10px 16px;
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  line-height: 1.5;
+  word-wrap: break-word;
+  
+  opacity: 0;
+  animation: fadeInMessage 0.3s ease forwards;
+}
+
+@keyframes fadeInMessage {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.message.user {
+  align-self: flex-end;
+  background: rgba(255, 255, 255, 0.4);
+  color: var(--text-primary);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.message.assistant {
+  align-self: flex-start;
+  background: rgba(196, 184, 216, 0.25);
+  color: var(--text-primary);
+  border: 1px solid rgba(196, 184, 216, 0.3);
+}
+
+/* ============================================
+   INPUT BAR (Pill-shaped glass)
+   ============================================ */
+.input-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  
+  background: rgba(255, 255, 255, 0.3);
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 0 0 var(--radius-xl) var(--radius-xl);
+}
+
+.input-icon-btn {
+  width: 36px;
+  height: 36px;
   flex-shrink: 0;
   
+  background: transparent;
+  border: none;
   border-radius: var(--radius-full);
-  border: 2px solid rgba(102, 126, 234, 0.2);
-  background: rgba(102, 126, 234, 0.1);
   
-  font-size: 22px;
+  color: var(--primary-dark);
   cursor: pointer;
+  
   display: flex;
   align-items: center;
   justify-content: center;
@@ -180,21 +444,18 @@ body {
   transition: all 0.2s ease;
 }
 
-.enter-room-btn:hover {
-  background: rgba(102, 126, 234, 0.2);
-  border-color: var(--primary);
-  transform: scale(1.05);
+.input-icon-btn:hover {
+  background: rgba(155, 138, 196, 0.15);
+  transform: scale(1.08);
 }
 
-.input-wrapper {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  
-  background: #f5f5f7;
-  border-radius: var(--radius-full);
-  padding: 6px 6px 6px 20px;
+.input-icon-btn:active {
+  transform: scale(0.95);
+}
+
+.input-icon-btn.active {
+  background: rgba(155, 138, 196, 0.25);
+  color: var(--primary);
 }
 
 .chat-input {
@@ -204,253 +465,88 @@ body {
   outline: none;
   
   font-family: inherit;
-  font-size: 15px;
+  font-size: 14px;
   color: var(--text-primary);
-  
-  padding: 8px 0;
+  padding: 8px 4px;
 }
 
 .chat-input::placeholder {
   color: var(--text-light);
 }
 
-.send-btn,
-.mic-toggle-btn {
-  width: 40px;
-  height: 40px;
-  flex-shrink: 0;
-  
-  border-radius: var(--radius-full);
-  border: none;
-  background: var(--primary);
-  
-  font-size: 18px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  
-  transition: all 0.2s ease;
-}
-
-.send-btn:hover,
-.mic-toggle-btn:hover {
-  transform: scale(1.08);
-  background: var(--primary-dark);
-}
-
-.send-btn:active,
-.mic-toggle-btn:active {
-  transform: scale(0.95);
-}
-
-.mic-toggle-btn {
-  background: rgba(0, 0, 0, 0.05);
-}
-
-.mic-toggle-btn.active {
-  background: #48bb78;
-  animation: pulse-green-subtle 2s infinite;
-}
-
-.mic-toggle-btn.listening {
-  background: #fc8181;
-  animation: pulse-red-subtle 1.5s infinite;
-}
-
-@keyframes pulse-green-subtle {
-  0%, 100% { 
-    box-shadow: 0 0 0 0 rgba(72, 187, 120, 0.4); 
-  }
-  50% { 
-    box-shadow: 0 0 0 8px rgba(72, 187, 120, 0); 
-  }
-}
-
-@keyframes pulse-red-subtle {
-  0%, 100% { 
-    box-shadow: 0 0 0 0 rgba(252, 129, 129, 0.4); 
-  }
-  50% { 
-    box-shadow: 0 0 0 8px rgba(252, 129, 129, 0); 
-  }
-}
-
 /* ============================================
-   CHAT CAPTION - Above Input
+   EXIT CONVERSATION BUTTON
    ============================================ */
-.chat-caption {
-  position: fixed;
-  bottom: 90px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 50;
+.exit-conversation-btn {
+  position: absolute;
+  top: 24px;
+  right: 440px;
   
-  max-width: 600px;
-  width: calc(100% - 80px);
-  padding: 14px 20px;
-  
-  background: rgba(0, 0, 0, 0.75);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-radius: var(--radius-lg);
-  
-  color: white;
-  font-size: 15px;
-  line-height: 1.5;
-  text-align: center;
-  
-  opacity: 0;
-  transform: translateX(-50%) translateY(10px);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  pointer-events: none;
-}
-
-.chat-caption.active {
-  opacity: 1;
-  transform: translateX(-50%) translateY(0);
-}
-
-/* ============================================
-   ROOM VIEW CONTROLS
-   ============================================ */
-.room-controls {
-  position: fixed;
-  bottom: 24px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 90;
-  
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 12px 20px;
-  
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border-radius: var(--radius-full);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-}
-
-.exit-room-btn,
-.explore-btn {
   padding: 10px 20px;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-full);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  background: rgba(255, 255, 255, 0.1);
   
-  color: white;
+  font-family: inherit;
   font-size: 14px;
   font-weight: 600;
-  font-family: inherit;
+  color: var(--primary-dark);
   cursor: pointer;
   
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  
+  box-shadow: var(--shadow-soft);
   transition: all 0.2s ease;
 }
 
-.exit-room-btn:hover,
-.explore-btn:hover {
-  background: rgba(255, 255, 255, 0.2);
-  border-color: rgba(255, 255, 255, 0.4);
-  transform: translateY(-2px);
-}
-
-.explore-btn.active {
-  background: rgba(72, 187, 120, 0.3);
-  border-color: rgba(72, 187, 120, 0.5);
+.exit-conversation-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateX(-4px);
 }
 
 /* ============================================
-   STATUS MESSAGE
-   ============================================ */
-.status-message {
-  position: fixed;
-  top: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 50;
-  
-  padding: 8px 20px;
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: var(--radius-full);
-  
-  color: white;
-  font-size: 14px;
-  font-weight: 600;
-}
-
-/* ============================================
-   TAGLINE TEXT (top-left)
-   ============================================ */
-.tagline {
-  position: fixed;
-  top: 20px;
-  left: 20px;
-  z-index: 50;
-  
-  color: rgb(215, 208, 150);
-  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-  pointer-events: none;
-}
-
-.tagline-main {
-  font-size: 18px;
-  font-weight: 700;
-  margin-bottom: 4px;
-}
-
-.tagline-sub {
-  font-size: 14px;
-  font-weight: 500;
-  opacity: 0.9;
-}
-
-/* ============================================
-   MENU TOGGLE BUTTON
+   SETTINGS TOGGLE (Always visible)
    ============================================ */
 .menu-toggle {
   position: fixed;
-  top: 20px;
-  right: 20px;
+  top: 24px;
+  right: 24px;
   z-index: 100;
   
-  width: 44px;
-  height: 44px;
-  border-radius: var(--radius-full);
-  background: rgba(0, 0, 0, 0.4);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  width: 48px;
+  height: 48px;
   
-  color: white;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-full);
+  
+  color: var(--primary-dark);
   font-size: 24px;
   cursor: pointer;
+  
   display: flex;
   align-items: center;
   justify-content: center;
+  
+  box-shadow: var(--shadow-soft);
   transition: all 0.2s ease;
 }
 
 .menu-toggle:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.3);
   transform: scale(1.05);
 }
 
 /* ============================================
-   MENU OVERLAY
+   MENU OVERLAY & PANEL
    ============================================ */
 .menu-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.4);
+  background: rgba(155, 138, 196, 0.2);
+  backdrop-filter: blur(4px);
   opacity: 0;
   visibility: hidden;
   transition: all 0.3s ease;
@@ -462,17 +558,14 @@ body {
   visibility: visible;
 }
 
-/* ============================================
-   MENU PANEL
-   ============================================ */
 .menu-panel {
   position: fixed;
   top: 0;
-  right: -380px;
-  width: 380px;
+  right: -400px;
+  width: 400px;
   height: 100%;
-  background: var(--surface);
-  box-shadow: -4px 0 24px rgba(0, 0, 0, 0.15);
+  background: var(--white-soft);
+  box-shadow: -4px 0 32px rgba(155, 138, 196, 0.2);
   z-index: 200;
   transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
@@ -489,7 +582,7 @@ body {
   align-items: center;
   justify-content: space-between;
   padding: var(--space-lg);
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid rgba(155, 138, 196, 0.15);
   flex-shrink: 0;
 }
 
@@ -500,12 +593,12 @@ body {
 }
 
 .menu-close {
-  width: 36px;
-  height: 36px;
+  width: 40px;
+  height: 40px;
   border-radius: var(--radius-full);
-  background: #f5f5f5;
+  background: rgba(155, 138, 196, 0.1);
   border: none;
-  font-size: 24px;
+  font-size: 28px;
   color: var(--text-secondary);
   cursor: pointer;
   display: flex;
@@ -515,7 +608,7 @@ body {
 }
 
 .menu-close:hover {
-  background: #eee;
+  background: rgba(155, 138, 196, 0.2);
 }
 
 .menu-content {
@@ -534,7 +627,7 @@ body {
 }
 
 .menu-item label {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
   color: var(--text-secondary);
   text-transform: uppercase;
@@ -549,7 +642,7 @@ body {
 
 .menu-divider {
   height: 1px;
-  background: #eee;
+  background: rgba(155, 138, 196, 0.15);
   margin: var(--space-sm) 0;
 }
 
@@ -565,8 +658,8 @@ body {
 .reply-pref-btn {
   padding: 12px 8px;
   border-radius: var(--radius-md);
-  border: 2px solid #eee;
-  background: #f9f9f9;
+  border: 2px solid rgba(155, 138, 196, 0.2);
+  background: rgba(255, 255, 255, 0.5);
   
   font-size: 13px;
   font-weight: 600;
@@ -584,14 +677,14 @@ body {
 
 .reply-pref-btn:hover {
   border-color: var(--primary);
-  transform: scale(1.05);
+  transform: scale(1.03);
 }
 
 .reply-pref-btn.active {
   border-color: var(--primary);
-  background: rgba(102, 126, 234, 0.1);
-  color: var(--primary);
-  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+  background: rgba(155, 138, 196, 0.15);
+  color: var(--primary-dark);
+  box-shadow: 0 0 0 3px rgba(155, 138, 196, 0.1);
 }
 
 /* ============================================
@@ -606,8 +699,8 @@ body {
 .avatar-option {
   aspect-ratio: 1;
   border-radius: var(--radius-md);
-  border: 2px solid #eee;
-  background: #f9f9f9;
+  border: 2px solid rgba(155, 138, 196, 0.2);
+  background: rgba(255, 255, 255, 0.5);
   cursor: pointer;
   overflow: hidden;
   transition: all 0.2s ease;
@@ -623,8 +716,8 @@ body {
 
 .avatar-option.active {
   border-color: var(--primary);
-  background: rgba(102, 126, 234, 0.1);
-  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+  background: rgba(155, 138, 196, 0.15);
+  box-shadow: 0 0 0 3px rgba(155, 138, 196, 0.1);
 }
 
 .avatar-emoji {
@@ -632,66 +725,16 @@ body {
 }
 
 /* ============================================
-   VOLUME CONTROL
-   ============================================ */
-.volume-control {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-top: 8px;
-  padding: 8px 12px;
-  background: #f5f5f5;
-  border-radius: var(--radius-md);
-}
-
-.volume-icon {
-  font-size: 18px;
-}
-
-.volume-slider {
-  flex: 1;
-  height: 6px;
-  -webkit-appearance: none;
-  appearance: none;
-  background: #ddd;
-  border-radius: 3px;
-  outline: none;
-}
-
-.volume-slider::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 18px;
-  height: 18px;
-  background: var(--primary);
-  border-radius: 50%;
-  cursor: pointer;
-  transition: transform 0.2s;
-}
-
-.volume-slider::-webkit-slider-thumb:hover {
-  transform: scale(1.2);
-}
-
-.volume-slider::-moz-range-thumb {
-  width: 18px;
-  height: 18px;
-  background: var(--primary);
-  border-radius: 50%;
-  cursor: pointer;
-  border: none;
-}
-
-/* ============================================
-   MODE TOGGLE BUTTONS
+   MODE TOGGLE & OTHER MENU ITEMS
+   (Keeping existing styles)
    ============================================ */
 .mode-toggle-btn {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: var(--space-md);
-  background: rgba(102, 126, 234, 0.05);
-  border: 2px solid rgba(102, 126, 234, 0.1);
+  background: rgba(155, 138, 196, 0.08);
+  border: 2px solid rgba(155, 138, 196, 0.15);
   border-radius: var(--radius-md);
   cursor: pointer;
   transition: all 0.2s ease;
@@ -699,7 +742,7 @@ body {
 }
 
 .mode-toggle-btn:hover {
-  border-color: rgba(102, 126, 234, 0.3);
+  border-color: rgba(155, 138, 196, 0.3);
 }
 
 .mode-label {
@@ -710,7 +753,7 @@ body {
 }
 
 .mode-toggle-btn.active .mode-label {
-  color: var(--primary);
+  color: var(--primary-dark);
 }
 
 .toggle-switch {
@@ -732,7 +775,7 @@ body {
   top: 2px;
   left: 2px;
   transition: left 0.3s;
-  box-shadow: var(--shadow-sm);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .mode-toggle-btn.active .toggle-switch {
@@ -743,18 +786,54 @@ body {
   left: 24px;
 }
 
-/* ============================================
-   MENU ACTION BUTTONS
-   ============================================ */
+.volume-control {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 8px;
+  padding: 10px 14px;
+  background: rgba(155, 138, 196, 0.08);
+  border-radius: var(--radius-md);
+}
+
+.volume-icon {
+  font-size: 18px;
+}
+
+.volume-slider {
+  flex: 1;
+  height: 6px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: rgba(155, 138, 196, 0.2);
+  border-radius: 3px;
+  outline: none;
+}
+
+.volume-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  background: var(--primary);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.volume-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+}
+
 .menu-action-btn {
   width: 100%;
   padding: var(--space-md);
-  background: rgba(102, 126, 234, 0.08);
-  border: 2px solid rgba(102, 126, 234, 0.15);
+  background: rgba(155, 138, 196, 0.1);
+  border: 2px solid rgba(155, 138, 196, 0.2);
   border-radius: var(--radius-md);
   font-size: 15px;
   font-weight: 600;
-  color: var(--primary);
+  color: var(--primary-dark);
   cursor: pointer;
   transition: all 0.2s ease;
   font-family: inherit;
@@ -762,17 +841,14 @@ body {
 }
 
 .menu-action-btn:hover {
-  background: rgba(102, 126, 234, 0.12);
+  background: rgba(155, 138, 196, 0.15);
   border-color: var(--primary);
   transform: translateY(-2px);
 }
 
-/* ============================================
-   DEBUG LOG
-   ============================================ */
 details summary {
   cursor: pointer;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--text-secondary);
   text-transform: uppercase;
@@ -785,7 +861,7 @@ details summary {
   padding: var(--space-md);
   background: rgba(0, 0, 0, 0.03);
   border-radius: var(--radius-sm);
-  font-size: 12px;
+  font-size: 11px;
   color: var(--text-light);
   max-height: 200px;
   overflow-y: auto;
@@ -793,152 +869,65 @@ details summary {
   font-family: 'Courier New', monospace;
 }
 
-/* ============================================
-   CORRECTION DISPLAY (Practice Mode)
-   ============================================ */
 .correction-display {
   margin-top: 8px;
   padding: 16px;
-  background: #f8f9fa;
-  border-radius: 12px;
+  background: rgba(155, 138, 196, 0.08);
+  border-radius: var(--radius-md);
   border-left: 3px solid var(--primary);
 }
 
 /* ============================================
-   RESPONSIVE DESIGN - TABLET
+   RESPONSIVE - TABLET
    ============================================ */
 @media (max-width: 768px) {
+  .chat-panel {
+    width: calc(100vw - 48px);
+    max-height: 60vh;
+  }
+  
+  .exit-conversation-btn {
+    right: auto;
+    left: 24px;
+    top: 24px;
+  }
+  
   .menu-panel {
     width: 100%;
     right: -100%;
   }
   
-  .chat-input-bar {
-    padding: 12px 16px;
-    gap: 10px;
-  }
-  
-  .enter-room-btn {
-    width: 44px;
-    height: 44px;
-    font-size: 20px;
-  }
-  
-  .input-wrapper {
-    padding: 4px 4px 4px 16px;
-  }
-  
-  .chat-input {
-    font-size: 14px;
-  }
-  
-  .send-btn,
-  .mic-toggle-btn {
-    width: 38px;
-    height: 38px;
-    font-size: 16px;
-  }
-  
-  .chat-caption {
-    bottom: 80px;
-    width: calc(100% - 60px);
-    padding: 12px 16px;
-    font-size: 14px;
-  }
-
-  .tagline {
-    top: 16px;
-    left: 16px;
-  }
-  
-  .tagline-main {
-    font-size: 16px;
-  }
-  
-  .tagline-sub {
-    font-size: 13px;
-  }
-  
-  .reply-preference-grid {
-    gap: 8px;
-  }
-  
-  .reply-pref-btn {
-    padding: 10px 6px;
-    font-size: 12px;
+  .explore-icon-btn {
+    bottom: 20px;
+    right: 20px;
   }
 }
 
 /* ============================================
-   RESPONSIVE DESIGN - MOBILE
+   RESPONSIVE - MOBILE
    ============================================ */
 @media (max-width: 480px) {
-  .chat-input-bar {
-    padding: 10px 12px;
-    gap: 8px;
-  }
-  
-  .enter-room-btn {
-    width: 40px;
-    height: 40px;
-    font-size: 18px;
-  }
-  
-  .input-wrapper {
-    padding: 4px 4px 4px 14px;
-  }
-  
-  .chat-input {
-    font-size: 13px;
-  }
-  
-  .send-btn,
-  .mic-toggle-btn {
-    width: 36px;
-    height: 36px;
+  .start-conversation-btn {
+    padding: 14px 28px;
     font-size: 15px;
   }
   
-  .chat-caption {
-    bottom: 70px;
-    width: calc(100% - 40px);
-    padding: 10px 14px;
-    font-size: 13px;
+  .greeting-bubble {
+    top: 30%;
   }
   
-  .status-message {
-    font-size: 12px;
-    padding: 6px 14px;
-  }
-
-  .tagline {
-    top: 12px;
-    left: 12px;
+  .chat-panel {
+    max-height: 50vh;
   }
   
-  .tagline-main {
-    font-size: 14px;
-  }
-  
-  .tagline-sub {
-    font-size: 12px;
-  }
-  
-  .room-controls {
-    bottom: 16px;
-    padding: 10px 16px;
-    gap: 12px;
-  }
-  
-  .exit-room-btn,
-  .explore-btn {
+  .exit-conversation-btn {
     padding: 8px 16px;
     font-size: 13px;
   }
 }
 
 /* ============================================
-   ACCESSIBILITY - FOCUS STATES
+   ACCESSIBILITY
    ============================================ */
 button:focus-visible,
 input:focus-visible {

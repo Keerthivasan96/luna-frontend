@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-  <meta name="theme-color" content="#667eea" />
+  <meta name="theme-color" content="#9B8AC4" />
   <meta name="description" content="Luna - Your AI Companion" />
   
   <title>Luna ✨</title>
@@ -19,14 +19,9 @@
 <body>
   
   <div class="immersive-container">
-    <!-- Tagline (top-left) -->
-    <div class="tagline">
-      <div class="tagline-main">The AI companion who cares</div>
-      <div class="tagline-sub">Always here to listen and talk.<br>Always on your side.</div>
-    </div>
     
-    <!-- 3D Avatar Container -->
-    <div id="canvas-container" aria-label="Your AI Companion">
+    <!-- 3D Avatar Container (Always Visible) -->
+    <div id="canvas-container" aria-label="Luna's Room">
       <div id="avatar-scroll-safe"></div>
       
       <!-- Loading Indicator -->
@@ -36,53 +31,82 @@
       </div>
     </div>
 
-    <!-- Status Message (top center) -->
-    <div id="status" class="status-message" aria-live="polite">
-      Ready to chat! 💭
-    </div>
-
-    <!-- Menu Toggle Button (top right) -->
-    <button id="menuToggle" class="menu-toggle" title="Settings" aria-label="Open settings menu">
-      ⋮
-    </button>
-    
-    <!-- Text Input Bar (bottom - Replika style) -->
-    <div id="chatInputBar" class="chat-input-bar">
-      <button id="enterRoomBtn" class="enter-room-btn" title="Enter room view" aria-label="Enter immersive room view">
-        🏠
+    <!-- ============================================
+         PREVIEW INTERFACE (Default on load)
+         ============================================ -->
+    <div id="previewInterface" class="preview-interface">
+      
+      <!-- Small greeting bubble near avatar -->
+      <div class="greeting-bubble">
+        <p>Hey. 👋</p>
+      </div>
+      
+      <!-- Primary CTA Button -->
+      <button id="startConversationBtn" class="start-conversation-btn">
+        <span class="btn-icon">💭</span>
+        <span class="btn-text">Start conversation</span>
       </button>
       
-      <div class="input-wrapper">
-        <input 
-          type="text" 
-          id="chatInput" 
-          class="chat-input" 
-          placeholder="Type a message..." 
-          aria-label="Chat input"
-        />
-        <button id="sendBtn" class="send-btn" title="Send message" aria-label="Send message">
-          ✈️
-        </button>
-        <button id="micToggleBtn" class="mic-toggle-btn active" title="Voice input" aria-label="Toggle voice input">
-          🎤
-        </button>
-      </div>
+      <!-- Small explore button -->
+      <button id="exploreBtn" class="explore-icon-btn" title="Explore room">
+        🔍
+      </button>
+      
     </div>
 
-    <!-- AI Reply Caption (above input) -->
-    <div id="chatCaption" class="chat-caption" role="status" aria-live="polite">
-      Ready to chat! 💭
-    </div>
-    
-    <!-- Room View Controls (hidden by default) -->
-    <div id="roomControls" class="room-controls" style="display: none;">
-      <button id="exitRoomBtn" class="exit-room-btn" title="Exit room view" aria-label="Back to chat view">
-        ← Back to Chat
+    <!-- ============================================
+         CONVERSATION INTERFACE (Hidden by default)
+         ============================================ -->
+    <div id="conversationInterface" class="conversation-interface" style="display: none;">
+      
+      <!-- Floating Glass Chat Panel -->
+      <div class="chat-panel">
+        
+        <!-- Messages Area -->
+        <div class="messages-container" id="messagesContainer">
+          <!-- Messages will appear here -->
+        </div>
+        
+        <!-- Input Bar -->
+        <div class="input-bar">
+          <button id="micBtn" class="input-icon-btn" title="Voice input" aria-label="Voice input">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+              <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+              <line x1="12" y1="19" x2="12" y2="23"></line>
+              <line x1="8" y1="23" x2="16" y2="23"></line>
+            </svg>
+          </button>
+          
+          <input 
+            type="text" 
+            id="chatInput" 
+            class="chat-input" 
+            placeholder="Type a message..." 
+            aria-label="Message input"
+          />
+          
+          <button id="sendBtn" class="input-icon-btn" title="Send" aria-label="Send message">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="22" y1="2" x2="11" y2="13"></line>
+              <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+            </svg>
+          </button>
+        </div>
+        
+      </div>
+      
+      <!-- Exit conversation button (top of panel) -->
+      <button id="exitConversationBtn" class="exit-conversation-btn" title="Back to preview">
+        ← Back
       </button>
-      <button id="exploreBtn" class="explore-btn" title="Zoom out to explore" aria-label="Explore room">
-        🔍 Explore
-      </button>
+      
     </div>
+
+    <!-- Settings Toggle Button (top right - always visible) -->
+    <button id="menuToggle" class="menu-toggle" title="Settings" aria-label="Open settings">
+      ⋮
+    </button>
     
     <!-- Settings Menu Panel -->
     <div id="menuPanel" class="menu-panel" role="dialog" aria-label="Settings">
@@ -198,7 +222,7 @@
       </div>
     </div>
 
-    <!-- Menu Overlay (for closing menu when clicking outside) -->
+    <!-- Menu Overlay -->
     <div id="menuOverlay" class="menu-overlay"></div>
 
   </div>
