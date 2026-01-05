@@ -1,6 +1,6 @@
 // ============================================
-// app.js - EMOTIONAL COMPANION (REPLIKA STYLE)
-// Two-interface flow with all existing features
+// app.js - EMOTIONAL COMPANION (3-SCREEN FLOW)
+// Integrates with screen-manager.js for navigation
 // ============================================
 
 import { startListening, stopListening, setSpeaking } from "./speech.js";
@@ -14,13 +14,18 @@ import {
   getControls
 } from "./threejs-avatar-3d.js";
 import { 
-  initInterfaceManager, 
-  addMessageToUI, 
-  addAssistantMessage,
-  switchToConversation,
-  getCurrentInterface,
-  getReplyPreference
-} from "./interface-manager.js";
+  initScreenManager,
+  showScreen,
+  updateLoadingStep,
+  setStatus,
+  showTranscript,
+  hideTranscript,
+  showReply,
+  showCaption,
+  hideCaption,
+  addMessageBubble,
+  getCurrentScreen
+} from "./screen-manager.js";
 
 const API_URL = "https://luna-backend-two.vercel.app/api/generate";
 const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
@@ -117,7 +122,10 @@ function initMusic() {
     if (i < files.length) backgroundMusic.src = files[i++]; 
   };
   backgroundMusic.addEventListener("error", tryNext);
-  backgroundMusic.addEventListener("canplaythrough", () => console.log("🎵 Ready"));
+  backgroundMusic.addEventListener("canplaythrough", () => {
+    console.log("🎵 Music ready");
+    updateLoadingStep('music', true);
+  });
   tryNext();
   
   if (musicVolumeSlider) musicVolumeSlider.value = musicVolume * 100;
@@ -158,37 +166,30 @@ function restoreMusic() {
 function detectEmotion(text) {
   const lower = text.toLowerCase();
   
-  // Vulnerability indicators (highest priority)
   if (/(don't know|confused|lost|not sure|maybe|i guess|kind of|sort of)/i.test(lower)) {
     return "vulnerable";
   }
   
-  // Sadness/pain
   if (/(sad|down|bad|terrible|awful|hate|upset|frustrated|angry|hurt|pain|hard|difficult|struggling)/i.test(lower)) {
     return "hurting";
   }
   
-  // Tiredness/depletion
   if (/(tired|exhausted|worn out|drained|sleepy|can't|done|over it)/i.test(lower)) {
     return "depleted";
   }
   
-  // Anxiety/stress
   if (/(stressed|anxious|worried|nervous|overwhelmed|scared|afraid|panic)/i.test(lower)) {
     return "anxious";
   }
   
-  // Joy/excitement (be careful not to over-match)
   if (/(happy|excited|great|amazing|awesome|love it|wonderful|perfect|best)/i.test(lower)) {
     return "joyful";
   }
   
-  // Curiosity/exploration
   if (/(what|why|how|tell me|explain|story|imagine|pretend|what if)/i.test(lower)) {
     return "curious";
   }
   
-  // Loneliness/seeking connection
   if (/(lonely|alone|nobody|miss|talk to me|be with me|stay|here)/i.test(lower)) {
     return "seeking";
   }
@@ -197,13 +198,12 @@ function detectEmotion(text) {
 }
 
 // ============================================
-// INTENT-BASED RESPONSE STRATEGY
+// RESPONSE STRATEGY
 // ============================================
 function getResponseStrategy(userText, emotion) {
   const lower = userText.toLowerCase();
   const words = userText.trim().split(/\s+/).length;
   
-  // Story/imagination requests - NEVER refuse
   if (/(tell me|say|talk|story|imagine|pretend|what if)/i.test(lower)) {
     return {
       mode: "flowing",
@@ -214,7 +214,6 @@ function getResponseStrategy(userText, emotion) {
     };
   }
   
-  // One-word responses (yes, no, okay, etc.)
   if (words === 1 && /^(yes|no|yeah|nope|ok|okay|sure|maybe|hi|hey|hello|bye|thanks)$/i.test(lower)) {
     return {
       mode: "acknowledge",
@@ -225,7 +224,6 @@ function getResponseStrategy(userText, emotion) {
     };
   }
   
-  // Vulnerable/confused state
   if (emotion === "vulnerable") {
     return {
       mode: "presence",
@@ -236,7 +234,6 @@ function getResponseStrategy(userText, emotion) {
     };
   }
   
-  // Pain/hurt
   if (emotion === "hurting") {
     return {
       mode: "empathy",
@@ -247,7 +244,6 @@ function getResponseStrategy(userText, emotion) {
     };
   }
   
-  // Seeking connection
   if (emotion === "seeking") {
     return {
       mode: "presence",
@@ -258,29 +254,27 @@ function getResponseStrategy(userText, emotion) {
     };
   }
   
-  // Joy
   if (emotion === "joyful") {
     return {
       mode: "match",
       minWords: 6,
       maxWords: 18,
-      askQuestion: Math.random() < 0.3, // 30% chance
+      askQuestion: Math.random() < 0.3,
       tone: "warm and light"
     };
   }
   
-  // Default casual
   return {
     mode: "casual",
     minWords: 6,
     maxWords: 18,
-    askQuestion: Math.random() < 0.25, // 25% chance
+    askQuestion: Math.random() < 0.25,
     tone: "relaxed and present"
   };
 }
 
 // ============================================
-// IMPROVED PROMPT BUILDER
+// PROMPT BUILDER
 // ============================================
 function buildPrompt(userText) {
   const context = conversationHistory.slice(-4).map(m =>
@@ -290,50 +284,40 @@ function buildPrompt(userText) {
   const emotion = detectEmotion(userText);
   const strategy = getResponseStrategy(userText, emotion);
 
-  // Update last emotion if significant
   if (emotion !== "neutral") {
     lastEmotion = emotion;
   }
 
   responseCount++;
 
-  // Lightweight emotional grounding (no therapy framing)
   let emotionalGuidance = "";
 
   switch (emotion) {
     case "vulnerable":
       emotionalGuidance = `They sound unsure. Be gentle and accepting. No fixing, no pressure, no questions.`;
       break;
-
     case "hurting":
       emotionalGuidance = `They seem hurt. Acknowledge it calmly without trying to solve anything.`;
       break;
-
     case "depleted":
       emotionalGuidance = `They seem tired. Keep responses short, kind, and unhurried.`;
       break;
-
     case "anxious":
       emotionalGuidance = `They feel overwhelmed. Be grounding, steady, and simple.`;
       break;
-
     case "joyful":
       emotionalGuidance = `They're in a good mood. Match their energy naturally, without overdoing it.`;
       break;
-
     case "curious":
       emotionalGuidance = `They're curious or exploring. Be open and go along with their ideas.`;
       break;
-
     case "seeking":
       emotionalGuidance = `They're looking for connection. Be present and available.`;
       break;
-
     default:
       emotionalGuidance = `Stay relaxed and natural.`;
   }
 
-  // Clear response rules (grounded, non-poetic, voice-friendly)
   const structureGuidance = `
 Response rules:
 - Mode: ${strategy.mode}
@@ -342,18 +326,15 @@ Response rules:
 ${strategy.askQuestion ? "- You may ask ONE simple question if it feels natural" : "- Do NOT ask questions"}
 
 CRITICAL RULES:
-1. NEVER invent scenarios or assume activities ("you're drinking", "you're going out", etc.)
-2. If input is unclear (single word like "story", "please", "interview"):
+1. NEVER invent scenarios or assume activities
+2. If input is unclear (single word like "story", "please"):
    → Ask a gentle follow-up question OR give brief acknowledgment
-   → Example: "story" → "Want me to tell you one?"
-   → Example: "please" → "Sure, what's up?"
 3. NEVER use therapy language: "I hear you", "that sounds", "that's valid"
-4. When user is frustrated or says "don't ask questions":
-   → Apologize briefly and switch to presence: "Sorry, I'm here."
+4. When user is frustrated: Apologize briefly and switch to presence: "Sorry, I'm here."
 5. Answer clear questions naturally and helpfully
 6. Accept broken English completely - respond to intent
 7. Be genuinely curious sometimes - ask follow-ups when natural
-8. Mix up response length naturally (not always the same pattern)
+8. Mix up response length naturally
 `;
 
   return `You are Luna, a cheerful AI companion.
@@ -400,9 +381,6 @@ function getBestVoice() {
   return voices.find(v => v.lang.startsWith("en")) || voices[0];
 }
 
-// ============================================
-// CLEAN TEXT FOR TTS
-// ============================================
 function cleanTextForSpeech(text) {
   return text
     .replace(/[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu, '')
@@ -411,14 +389,10 @@ function cleanTextForSpeech(text) {
     .trim();
 }
 
-// ============================================
-// ENFORCE RESPONSE LENGTH (never cut mid-sentence)
-// ============================================
 function enforceResponseLength(reply, maxWords = 30) {
   const words = reply.trim().split(/\s+/);
   if (words.length <= maxWords) return reply;
   
-  // Find sentence boundaries
   const sentences = reply.split(/([.!?]\s+)/);
   let result = '';
   let wordsSoFar = 0;
@@ -436,12 +410,10 @@ function enforceResponseLength(reply, maxWords = 30) {
     }
   }
   
-  // If we got at least one complete sentence, return it
   if (result.trim().length > 0 && /[.!?]$/.test(result.trim())) {
     return result.trim();
   }
   
-  // Otherwise take first sentence and ensure it ends properly
   const firstSentence = sentences[0].trim();
   const firstWords = firstSentence.split(/\s+/).slice(0, maxWords).join(' ');
   return firstWords.endsWith('.') || firstWords.endsWith('!') || firstWords.endsWith('?') 
@@ -449,15 +421,11 @@ function enforceResponseLength(reply, maxWords = 30) {
     : firstWords + '.';
 }
 
-// ============================================
-// SPEAK WITH NATURAL TIMING
-// ============================================
 function speak(text) {
   if (!text?.trim()) return;
 
   window.speechSynthesis.cancel();
   
-  const originalText = text.replace(/\s+/g, " ").trim();
   const cleanForSpeech = cleanTextForSpeech(text);
   
   const words = cleanForSpeech.split(/\s+/).length;
@@ -478,6 +446,11 @@ function speak(text) {
     setSpeaking(true);
     avatarStartTalking();
     lowerMusic();
+    
+    // Show caption in call mode
+    if (getCurrentScreen() === 'call') {
+      showCaption(text);
+    }
   };
 
   utterance.onend = () => {
@@ -487,6 +460,7 @@ function speak(text) {
     avatarStopTalking();
     restoreMusic();
     isProcessing = false;
+    hideCaption();
   };
 
   utterance.onerror = (e) => {
@@ -496,6 +470,7 @@ function speak(text) {
     avatarStopTalking();
     restoreMusic();
     isProcessing = false;
+    hideCaption();
   };
 
   window.speechSynthesis.speak(utterance);
@@ -507,10 +482,11 @@ function stopSpeaking() {
   setSpeaking(false);
   avatarStopTalking();
   restoreMusic();
+  hideCaption();
 }
 
 // ============================================
-// IMPROVED VALIDATION
+// VALIDATION
 // ============================================
 function isValidResponse(reply, userText) {
   if (!reply || typeof reply !== 'string') return false;
@@ -519,7 +495,6 @@ function isValidResponse(reply, userText) {
   const words = trimmed.split(/\s+/).filter(w => w.length > 0);
   const wordCount = words.length;
   
-  // Check if response is just deflection/confusion
   const badResponses = [
     /^(what\?|huh\?|what do you mean\?|are you drunk\?|spill|haha what)/i,
     /^(can you (clarify|explain|tell me more)\?)/i,
@@ -531,7 +506,6 @@ function isValidResponse(reply, userText) {
     return false;
   }
   
-  // Single word responses are valid if they're acknowledgments
   const wordOnly = trimmed.replace(/[.,!?]+$/, '');
   const validOneWord = /^(yeah|yep|nope|okay|sure|maybe|totally|absolutely|definitely|honestly|hey|hi|mm|mhm|oh|aww|cool|nice)$/i;
   if (wordCount === 1 && validOneWord.test(wordOnly)) {
@@ -539,7 +513,6 @@ function isValidResponse(reply, userText) {
     return true;
   }
   
-  // Two words minimum for everything else
   if (wordCount >= 2) {
     console.log(`✅ Valid response (${wordCount} words)`);
     return true;
@@ -549,19 +522,14 @@ function isValidResponse(reply, userText) {
   return false;
 }
 
-// ============================================
-// CLARIFICATION FALLBACK
-// ============================================
 function needsClarification(text) {
   if (!text) return true;
   
   const cleaned = text.trim().toLowerCase();
   const words = cleaned.split(/\s+/);
   
-  // ONLY ask for clarification on truly empty/gibberish input
   if (words.length === 0 || cleaned.length < 2) return true;
   
-  // Pure gibberish (only consonants/no vowels in 4+ chars)
   if (cleaned.length >= 4 && !/[aeiou]/i.test(cleaned)) return true;
   
   return false;
@@ -579,30 +547,21 @@ function getClarificationReply() {
 }
 
 // ============================================
-// SEND MESSAGE WITH EMOTIONAL AWARENESS
+// SEND MESSAGE WITH SCREEN AWARENESS
 // ============================================
 async function sendMessage(text) {
   if (!text?.trim() || isProcessing) return;
 
-  // Auto-switch to conversation interface if still in preview
-  if (getCurrentInterface() === 'preview') {
-    switchToConversation();
-    // Small delay for UI transition
-    await new Promise(resolve => setTimeout(resolve, 400));
-  }
-
-  // 🔒 Clarification gate (BEFORE LLM)
   if (needsClarification(text)) {
     console.log("🟡 Clarification needed, skipping API");
     const clarification = getClarificationReply();
     
-    // Add to UI
-    addMessageToUI('user', text);
-    addMessageToUI('assistant', clarification);
+    const screen = getCurrentScreen();
     
-    // Speak if voice preference
-    const replyPref = getReplyPreference();
-    if (replyPref === 'voice' || replyPref === 'both') {
+    if (screen === 'textChat') {
+      addMessageBubble('user', text);
+      addMessageBubble('assistant', clarification);
+    } else {
       speak(clarification);
     }
     return;
@@ -611,18 +570,18 @@ async function sendMessage(text) {
   const cleaned = text.trim().toLowerCase();
   const wordCount = cleaned.split(/\s+/).length;
   
-  // Soft acknowledgment for single unclear words (no API call)
   if (wordCount === 1) {
     const singleWordAcks = /^(yeah|yep|okay|ok|sure|mm|hmm|uh|ah|oh)$/i;
     if (singleWordAcks.test(cleaned)) {
       const responses = ["Mm-hmm.", "Yeah?", "I'm here."];
       const response = responses[Math.floor(Math.random() * responses.length)];
       
-      addMessageToUI('user', text);
-      addMessageToUI('assistant', response);
+      const screen = getCurrentScreen();
       
-      const replyPref = getReplyPreference();
-      if (replyPref === 'voice' || replyPref === 'both') {
+      if (screen === 'textChat') {
+        addMessageBubble('user', text);
+        addMessageBubble('assistant', response);
+      } else {
         speak(response);
       }
       return;
@@ -635,10 +594,14 @@ async function sendMessage(text) {
   conversationHistory.push({ role: "user", content: text });
   saveHistory();
   
-  // Add user message to UI
-  addMessageToUI('user', text);
+  // Add user message to UI if in text chat
+  const screen = getCurrentScreen();
+  if (screen === 'textChat') {
+    addMessageBubble('user', text);
+  }
   
   avatarStartTalking();
+  setStatus("Thinking... 💭");
   console.log(`📤 Sending: "${text}"`);
 
   try {
@@ -664,13 +627,11 @@ async function sendMessage(text) {
     const data = await response.json();
     let reply = data.reply || data.text || data.content || "";
     
-    // Clean up LLM artifacts
     reply = reply
       .replace(/^(Luna:|Assistant:)/i, "")
       .replace(/\*[^*]+\*/g, "")
       .trim();
     
-    // Enforce length limit
     reply = enforceResponseLength(reply, 30);
     
     const replyWordCount = reply.trim().split(/\s+/).length;
@@ -685,16 +646,25 @@ async function sendMessage(text) {
     saveHistory();
     
     avatarStopTalking();
+    setStatus("Ready! 💭");
     
-    // Use interface manager to handle reply (respects user preference)
-    addAssistantMessage(reply);
+    // Handle reply based on current screen
+    if (screen === 'textChat') {
+      // Text chat: show as bubble
+      addMessageBubble('assistant', reply);
+    } else {
+      // Call screen: speak it
+      speak(reply);
+    }
+    
+    isProcessing = false;
 
   } catch (err) {
     console.error("❌ Error:", err.message);
     isProcessing = false;
     avatarStopTalking();
+    setStatus("Ready! 💭");
 
-    // Emotionally appropriate error responses
     const emotion = detectEmotion(text);
     let errorResponse;
     
@@ -709,10 +679,9 @@ async function sendMessage(text) {
       errorResponse = errorResponses[Math.floor(Math.random() * errorResponses.length)];
     }
     
-    addMessageToUI('assistant', errorResponse);
-    
-    const replyPref = getReplyPreference();
-    if (replyPref === 'voice' || replyPref === 'both') {
+    if (screen === 'textChat') {
+      addMessageBubble('assistant', errorResponse);
+    } else {
       speak(errorResponse);
     }
   }
@@ -759,10 +728,9 @@ clearBtn?.addEventListener("click", () => {
   clearHistory();
   stopSpeaking();
   
-  // Clear messages from UI
-  const messagesContainer = document.getElementById('messagesContainer');
-  if (messagesContainer) {
-    messagesContainer.innerHTML = '';
+  // Clear messages from UI (using screen-manager function)
+  if (window.screenManager?.clearMessages) {
+    window.screenManager.clearMessages();
   }
   
   menuPanel?.classList.remove("active");
@@ -779,22 +747,12 @@ demoLessonBtn?.addEventListener("click", () => {
   ];
   const prompt = prompts[Math.floor(Math.random() * prompts.length)];
   
-  // Auto-switch to conversation and add message
-  if (getCurrentInterface() === 'preview') {
-    switchToConversation();
-    setTimeout(() => {
-      addMessageToUI('assistant', prompt);
-      const replyPref = getReplyPreference();
-      if (replyPref === 'voice' || replyPref === 'both') {
-        speak(prompt);
-      }
-    }, 400);
+  const screen = getCurrentScreen();
+  
+  if (screen === 'textChat') {
+    addMessageBubble('assistant', prompt);
   } else {
-    addMessageToUI('assistant', prompt);
-    const replyPref = getReplyPreference();
-    if (replyPref === 'voice' || replyPref === 'both') {
-      speak(prompt);
-    }
+    speak(prompt);
   }
   
   menuPanel?.classList.remove("active");
@@ -811,7 +769,7 @@ avatarOptions.forEach(btn => {
 });
 
 // ============================================
-// EXPOSE GLOBAL HANDLERS FOR INTERFACE MANAGER
+// EXPOSE GLOBAL HANDLERS
 // ============================================
 window.handleUserMessage = sendMessage;
 window.speakText = speak;
@@ -821,37 +779,45 @@ window.avatarModule = { getControls };
 // INITIALIZE
 // ============================================
 async function init() {
-  console.log("🚀 Starting Luna (Replika Style)...");
+  console.log("🚀 Starting Luna (3-Screen Flow)...");
   console.log(`📡 API: ${API_URL}`);
+  
+  // Initialize screen manager FIRST
+  initScreenManager();
   
   currentAvatarPath = loadAvatar();
   
+  // Init 3D scene
   if (!init3DScene("canvas-container")) {
     console.log("❌ 3D failed");
     return;
   }
+  updateLoadingStep('scene3D', true);
 
+  // Load room
   try {
     await loadRoomModel("/assets/room/room1.glb");
     console.log("🏠 Room loaded");
+    updateLoadingStep('room', true);
   } catch (e) {
     console.log("🏠 Fallback");
     useFallbackEnvironment();
+    updateLoadingStep('room', true);
   }
 
+  // Load avatar
   try {
     await loadVRMAvatar(currentAvatarPath);
     console.log("👤 Avatar loaded");
+    updateLoadingStep('avatar', true);
   } catch (e) {
     console.log("❌ Avatar failed");
+    updateLoadingStep('avatar', true); // Continue anyway
   }
 
   avatarOptions.forEach(btn => {
     btn.classList.toggle("active", btn.dataset.avatar === currentAvatarPath);
   });
-
-  // Initialize interface manager (two-interface flow)
-  initInterfaceManager();
 
   initMusic();
   updateMusicUI();
@@ -859,17 +825,24 @@ async function init() {
   const hasHistory = loadHistory();
   console.log(hasHistory ? "📂 Welcome back!" : "🌟 Fresh start!");
 
+  // Wait for voices
   if (window.speechSynthesis.getVoices().length === 0) {
     window.speechSynthesis.onvoiceschanged = () => {
       console.log(`🔊 ${window.speechSynthesis.getVoices().length} voices`);
+      updateLoadingStep('voices', true);
     };
+  } else {
+    updateLoadingStep('voices', true);
   }
 
+  // Request mic
   try {
     await navigator.mediaDevices.getUserMedia({ audio: true });
     console.log("✅ Mic ready");
+    updateLoadingStep('mic', true);
   } catch (e) {
     console.log("⚠️ Mic access needed for voice features");
+    updateLoadingStep('mic', true); // Continue anyway
   }
 
   console.log("✅ Luna ready!");
