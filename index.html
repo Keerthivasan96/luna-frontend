@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-  <meta name="theme-color" content="#9B8AC4" />
+  <meta name="theme-color" content="#6B8DC4" />
   <meta name="description" content="Luna - Your AI Companion" />
   
   <title>Luna ✨</title>
@@ -11,221 +11,244 @@
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   
   <!-- Styles -->
   <link rel="stylesheet" href="/style.css" />
 </head>
 <body>
   
-  <div class="immersive-container">
+  <!-- ============================================
+       SCREEN 1: LANDING / LOADING
+       ============================================ -->
+  <div id="landingScreen" class="screen active">
+    <div class="landing-content">
+      <h1 class="landing-title">The AI companion who cares</h1>
+      <p class="landing-subtitle">
+        Always here to listen and talk.<br>
+        Always on your side.
+      </p>
+      
+      <!-- Loading Progress -->
+      <div class="loading-container">
+        <div class="loading-bar">
+          <div id="loadingProgress" class="loading-progress"></div>
+        </div>
+        <p id="loadingText" class="loading-text">Loading...</p>
+      </div>
+      
+      <!-- Enter Button (shows when loaded) -->
+      <button id="enterBtn" class="enter-btn" style="display: none;">
+        Enter
+      </button>
+    </div>
+  </div>
+
+  <!-- ============================================
+       SCREEN 2: TEXT CHAT (DEFAULT AFTER LOADING)
+       ============================================ -->
+  <div id="textChatScreen" class="screen">
     
-    <!-- 3D Avatar Container (Always Visible) -->
+    <!-- Header -->
+    <div class="chat-header">
+      <div class="chat-logo">Luna</div>
+      <button id="chatMenuToggle" class="chat-menu-btn">⋮</button>
+    </div>
+    
+    <!-- Main Chat Container -->
+    <div class="chat-container">
+      
+      <!-- Static Avatar (Left) -->
+      <div class="static-avatar-container">
+        <div class="static-avatar">
+          <img id="staticAvatarImg" src="/assets/avatar-static.png" alt="Luna" class="avatar-image">
+        </div>
+      </div>
+      
+      <!-- Chat Messages (Right) -->
+      <div class="chat-messages-container">
+        <div id="textChatMessages" class="text-chat-messages">
+          <!-- Messages will appear here -->
+        </div>
+      </div>
+      
+    </div>
+    
+    <!-- Input Bar (Bottom) -->
+    <div class="text-chat-input-bar">
+      <button id="callBtn" class="call-btn" title="Start voice call">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+        </svg>
+      </button>
+      
+      <input 
+        type="text" 
+        id="textChatInput" 
+        class="text-chat-input" 
+        placeholder="Start typing" 
+        aria-label="Type message"
+      />
+      
+      <button id="textSendBtn" class="text-send-btn">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="22" y1="2" x2="11" y2="13"></line>
+          <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+        </svg>
+      </button>
+    </div>
+    
+  </div>
+
+  <!-- ============================================
+       SCREEN 3: 3D AVATAR CALL (YOUR EXISTING)
+       ============================================ -->
+  <div id="callScreen" class="screen">
+    
+    <!-- 3D Canvas Container -->
     <div id="canvas-container" aria-label="Luna's Room">
       <div id="avatar-scroll-safe"></div>
       
       <!-- Loading Indicator -->
       <div id="loading-indicator" class="loading-indicator">
         <div class="loading-spinner"></div>
-        <span>Loading...</span>
+        <span>Loading avatar...</span>
       </div>
     </div>
-
-    <!-- ============================================
-         PREVIEW INTERFACE (Default on load)
-         ============================================ -->
-    <div id="previewInterface" class="preview-interface">
-      
-      <!-- Small greeting bubble near avatar -->
-      <div class="greeting-bubble">
-        <p>Hey. 👋</p>
-      </div>
-      
-      <!-- Primary CTA Button -->
-      <button id="startConversationBtn" class="start-conversation-btn">
-        <span class="btn-icon">💭</span>
-        <span class="btn-text">Start conversation</span>
-      </button>
-      
-      <!-- Small explore button -->
-      <button id="exploreBtn" class="explore-icon-btn" title="Explore room">
-        🔍
-      </button>
-      
-    </div>
-
-    <!-- ============================================
-         CONVERSATION INTERFACE (Hidden by default)
-         ============================================ -->
-    <div id="conversationInterface" class="conversation-interface" style="display: none;">
-      
-      <!-- Floating Glass Chat Panel -->
-      <div class="chat-panel">
-        
-        <!-- Messages Area -->
-        <div class="messages-container" id="messagesContainer">
-          <!-- Messages will appear here -->
-        </div>
-        
-        <!-- Input Bar -->
-        <div class="input-bar">
-          <button id="micBtn" class="input-icon-btn" title="Voice input" aria-label="Voice input">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
-              <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
-              <line x1="12" y1="19" x2="12" y2="23"></line>
-              <line x1="8" y1="23" x2="16" y2="23"></line>
-            </svg>
-          </button>
-          
-          <input 
-            type="text" 
-            id="chatInput" 
-            class="chat-input" 
-            placeholder="Type a message..." 
-            aria-label="Message input"
-          />
-          
-          <button id="sendBtn" class="input-icon-btn" title="Send" aria-label="Send message">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="22" y1="2" x2="11" y2="13"></line>
-              <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-            </svg>
-          </button>
-        </div>
-        
-      </div>
-      
-      <!-- Exit conversation button (top of panel) -->
-      <button id="exitConversationBtn" class="exit-conversation-btn" title="Back to preview">
-        ← Back
-      </button>
-      
-    </div>
-
-    <!-- Settings Toggle Button (top right - always visible) -->
-    <button id="menuToggle" class="menu-toggle" title="Settings" aria-label="Open settings">
-      ⋮
+    
+    <!-- Back Button -->
+    <button id="backToTextBtn" class="back-to-text-btn">
+      ← Back to Chat
     </button>
     
-    <!-- Settings Menu Panel -->
-    <div id="menuPanel" class="menu-panel" role="dialog" aria-label="Settings">
-      <div class="menu-header">
-        <h3>Settings</h3>
-        <button id="menuClose" class="menu-close" aria-label="Close settings">×</button>
+    <!-- Floating Glass Chat Panel (Optional) -->
+    <div id="callChatPanel" class="call-chat-panel">
+      
+      <!-- Messages -->
+      <div class="call-messages-container" id="callMessages">
+        <!-- Messages appear here during call -->
       </div>
       
-      <div class="menu-content">
+      <!-- Input Bar -->
+      <div class="call-input-bar">
+        <button id="callMicBtn" class="call-mic-btn" title="Voice input">
+          🎤
+        </button>
         
-        <!-- Reply Preference -->
-        <div class="menu-item">
-          <label>Reply Preference</label>
-          <div class="reply-preference-grid">
-            <button class="reply-pref-btn" data-pref="text" title="Text replies only">
-              💬 Text
-            </button>
-            <button class="reply-pref-btn active" data-pref="voice" title="Voice replies only">
-              🎤 Voice
-            </button>
-            <button class="reply-pref-btn" data-pref="both" title="Both text and voice">
-              ✨ Both
-            </button>
-          </div>
-        </div>
-
-        <!-- Divider -->
-        <div class="menu-divider"></div>
+        <input 
+          type="text" 
+          id="callChatInput" 
+          class="call-chat-input" 
+          placeholder="Type a message..." 
+          aria-label="Message input"
+        />
         
-        <!-- Avatar Selection -->
-        <div class="menu-item">
-          <label>Choose Avatar</label>
-          <div class="avatar-grid">
-            <button class="avatar-option active" data-avatar="/assets/vrmavatar1.vrm" title="Avatar 1" aria-label="Select Avatar 1">
-              <span class="avatar-emoji">👧</span>
-            </button>
-            <button class="avatar-option" data-avatar="/assets/vrmavatar2.vrm" title="Avatar 2" aria-label="Select Avatar 2">
-              <span class="avatar-emoji">👩</span>
-            </button>
-            <button class="avatar-option" data-avatar="/assets/vrmavatar3.vrm" title="Avatar 3" aria-label="Select Avatar 3">
-              <span class="avatar-emoji">👱‍♀️</span>
-            </button>
-            <button class="avatar-option" data-avatar="/assets/vrmavatar4.vrm" title="Avatar 4" aria-label="Select Avatar 4">
-              <span class="avatar-emoji">🧑</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- Divider -->
-        <div class="menu-divider"></div>
-
-        <!-- Background Music -->
-        <div class="menu-item">
-          <label>Background Music</label>
-          <button id="musicToggle" class="mode-toggle-btn" aria-label="Toggle background music">
-            <span class="mode-label">Music Off</span>
-            <div class="toggle-switch"></div>
-          </button>
-          <div class="volume-control">
-            <span class="volume-icon">🔊</span>
-            <input 
-              type="range" 
-              id="musicVolume" 
-              min="0" 
-              max="100" 
-              value="30" 
-              class="volume-slider"
-              aria-label="Music volume"
-            >
-          </div>
-        </div>
-
-        <!-- Divider -->
-        <div class="menu-divider"></div>
-
-        <!-- Conversation Mode Toggle -->
-        <div class="menu-item">
-          <label>Conversation Mode</label>
-          <button id="modeToggle" class="mode-toggle-btn" aria-label="Toggle conversation mode">
-            <span class="mode-label">Casual Chat</span>
-            <div class="toggle-switch"></div>
-          </button>
-          <p class="menu-hint">Casual = friendly chat • Practice = grammar help</p>
-        </div>
-
-        <!-- Practice Mode Corrections Display -->
-        <div id="correctionDisplay" class="menu-item" style="display: none;">
-          <label>Latest Correction</label>
-          <div id="correctionContent" class="correction-display"></div>
-        </div>
-
-        <!-- Divider -->
-        <div class="menu-divider"></div>
-
-        <!-- Action Buttons -->
-        <div class="menu-item">
-          <button id="clearBtn" class="menu-action-btn" aria-label="Start fresh conversation">
-            🔄 Start Fresh Conversation
-          </button>
-        </div>
-
-        <div class="menu-item">
-          <button id="demoLessonBtn" class="menu-action-btn" aria-label="Get daily challenge">
-            ✨ Daily Challenge
-          </button>
-        </div>
-
-        <!-- Debug Log (collapsed by default) -->
-        <details class="menu-item">
-          <summary>Debug Log</summary>
-          <div id="log" class="debug-log"></div>
-        </details>
+        <button id="callSendBtn" class="call-send-btn" title="Send">
+          ✈️
+        </button>
       </div>
+      
     </div>
-
-    <!-- Menu Overlay -->
-    <div id="menuOverlay" class="menu-overlay"></div>
-
+    
+    <!-- Settings Toggle (Top Right) -->
+    <button id="menuToggle" class="menu-toggle">⋮</button>
+    
   </div>
+
+  <!-- ============================================
+       SETTINGS MENU PANEL (Shared across screens)
+       ============================================ -->
+  <div id="menuPanel" class="menu-panel">
+    <div class="menu-header">
+      <h3>Settings</h3>
+      <button id="menuClose" class="menu-close">×</button>
+    </div>
+    
+    <div class="menu-content">
+      
+      <!-- Avatar Selection -->
+      <div class="menu-item">
+        <label>Choose Avatar</label>
+        <div class="avatar-grid">
+          <button class="avatar-option active" data-avatar="/assets/vrmavatar1.vrm" title="Avatar 1">
+            <span class="avatar-emoji">👧</span>
+          </button>
+          <button class="avatar-option" data-avatar="/assets/vrmavatar2.vrm" title="Avatar 2">
+            <span class="avatar-emoji">👩</span>
+          </button>
+          <button class="avatar-option" data-avatar="/assets/vrmavatar3.vrm" title="Avatar 3">
+            <span class="avatar-emoji">👱‍♀️</span>
+          </button>
+          <button class="avatar-option" data-avatar="/assets/vrmavatar4.vrm" title="Avatar 4">
+            <span class="avatar-emoji">🧑</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="menu-divider"></div>
+
+      <!-- Background Music -->
+      <div class="menu-item">
+        <label>Background Music</label>
+        <button id="musicToggle" class="mode-toggle-btn">
+          <span class="mode-label">Music Off</span>
+          <div class="toggle-switch"></div>
+        </button>
+        <div class="volume-control">
+          <span class="volume-icon">🔊</span>
+          <input 
+            type="range" 
+            id="musicVolume" 
+            min="0" 
+            max="100" 
+            value="30" 
+            class="volume-slider"
+          >
+        </div>
+      </div>
+
+      <div class="menu-divider"></div>
+
+      <!-- Conversation Mode -->
+      <div class="menu-item">
+        <label>Conversation Mode</label>
+        <button id="modeToggle" class="mode-toggle-btn">
+          <span class="mode-label">Casual Chat</span>
+          <div class="toggle-switch"></div>
+        </button>
+        <p class="menu-hint">Casual = friendly chat • Practice = grammar help</p>
+      </div>
+
+      <div id="correctionDisplay" class="menu-item" style="display: none;">
+        <label>Latest Correction</label>
+        <div id="correctionContent" class="correction-display"></div>
+      </div>
+
+      <div class="menu-divider"></div>
+
+      <!-- Action Buttons -->
+      <div class="menu-item">
+        <button id="clearBtn" class="menu-action-btn">
+          🔄 Start Fresh Conversation
+        </button>
+      </div>
+
+      <div class="menu-item">
+        <button id="demoLessonBtn" class="menu-action-btn">
+          ✨ Daily Challenge
+        </button>
+      </div>
+
+      <!-- Debug Log -->
+      <details class="menu-item">
+        <summary>Debug Log</summary>
+        <div id="log" class="debug-log"></div>
+      </details>
+    </div>
+  </div>
+
+  <!-- Menu Overlay -->
+  <div id="menuOverlay" class="menu-overlay"></div>
 
   <!-- External Libraries -->
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
