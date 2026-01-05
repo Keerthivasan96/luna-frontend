@@ -52,6 +52,12 @@
     <!-- Header -->
     <div class="chat-header">
       <div class="chat-logo">Luna</div>
+      
+      <!-- Status Message (centered in header) -->
+      <div id="status" class="status-message-inline" aria-live="polite">
+        Ready to chat! 💭
+      </div>
+      
       <button id="chatMenuToggle" class="chat-menu-btn">⋮</button>
     </div>
     
@@ -61,7 +67,15 @@
       <!-- Static Avatar (Left) -->
       <div class="static-avatar-container">
         <div class="static-avatar">
-          <img id="staticAvatarImg" src="/assets/avatar-static.png" alt="Luna" class="avatar-image">
+          <!-- Placeholder - replace with actual avatar image -->
+          <div class="avatar-placeholder">
+            <span class="avatar-placeholder-icon">👧</span>
+          </div>
+        </div>
+        
+        <!-- Transcript Display (below avatar) -->
+        <div id="transcript" class="transcript-display" style="display: none;">
+          <!-- User's speech-to-text appears here -->
         </div>
       </div>
       
@@ -69,6 +83,11 @@
       <div class="chat-messages-container">
         <div id="textChatMessages" class="text-chat-messages">
           <!-- Messages will appear here -->
+        </div>
+        
+        <!-- Reply Display (for text mode) -->
+        <div id="reply" class="reply-display">
+          <!-- AI replies appear here -->
         </div>
       </div>
       
@@ -105,6 +124,12 @@
        ============================================ -->
   <div id="callScreen" class="screen">
     
+    <!-- Tagline (top-left) -->
+    <div class="tagline">
+      <div class="tagline-main">The AI companion who cares</div>
+      <div class="tagline-sub">Always here to listen and talk.<br>Always on your side.</div>
+    </div>
+    
     <!-- 3D Canvas Container -->
     <div id="canvas-container" aria-label="Luna's Room">
       <div id="avatar-scroll-safe"></div>
@@ -120,6 +145,23 @@
     <button id="backToTextBtn" class="back-to-text-btn">
       ← Back to Chat
     </button>
+    
+    <!-- Microphone Button (bottom-left) -->
+    <div id="mic-container">
+      <button id="micBtn" class="mic-small" title="Start conversation" aria-label="Start or pause conversation">
+        🎤
+      </button>
+    </div>
+
+    <!-- AI Reply Caption (bottom center) - FOR VOICE MODE -->
+    <div id="chatCaption" class="chat-caption" role="status" aria-live="polite">
+      <!-- Voice replies appear here -->
+    </div>
+
+    <!-- Status Message (top center) -->
+    <div id="callStatus" class="status-message" aria-live="polite">
+      <!-- Status updates appear here -->
+    </div>
     
     <!-- Floating Glass Chat Panel (Optional) -->
     <div id="callChatPanel" class="call-chat-panel">
