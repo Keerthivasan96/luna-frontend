@@ -793,7 +793,7 @@ async function init() {
 
   // Load room
   try {
-    await loadRoomModel("/assets/room/room1.glb");
+    await loadRoomModel("/assets/room/room3.glb");
     console.log("🏠 Room loaded");
     updateLoadingStep('room', true);
   } catch (e) {
