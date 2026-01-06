@@ -50,60 +50,40 @@ export function showScreen(screenName) {
 }
 
 function onScreenChange(screenName) {
-  switch(screenName) {
+  const canvas = document.querySelector('canvas');
+
+  switch (screenName) {
     case 'landing':
       break;
-      
+
     case 'textChat':
-      // TEXT CHAT MODE - Close camera, intimate feel
-      console.log('[ScreenManager] 🎬 Transitioning to TEXT CHAT mode');
-      
-      // Trigger camera transition to text chat mode
-      if (window.avatarModule?.transitionCameraToMode) {
-        window.avatarModule.transitionCameraToMode('textChat', 1500);
+      const textChatContainer = document.getElementById('canvas-container-text');
+      if (canvas && textChatContainer && !textChatContainer.contains(canvas)) {
+        textChatContainer.appendChild(canvas);
       }
-      
+
+      window.avatarModule?.transitionCameraToMode('textChat', 1500);
       setTimeout(() => {
         const input = document.getElementById('textChatInput');
         if (input) input.focus();
       }, 400);
-      
       stopListening();
       setSpeaking(false);
       break;
-      
+
     case 'call':
-      // CALL MODE - Zoom out, immersive feel
-      console.log('[ScreenManager] 🎬 Transitioning to CALL mode');
-      
-      const input = document.getElementById('textChatInput');
-      if (input) input.blur();
-      
-      // Trigger camera transition to call mode with greeting callback
-      if (window.avatarModule?.transitionCameraToMode) {
-        window.avatarModule.transitionCameraToMode('call', 1800, () => {
-          // CALLBACK: Triggered AFTER camera finishes zooming out
-          console.log('[ScreenManager] ✅ Camera transition complete, greeting user');
-          
-          // "Hey there!" greeting
-          if (window.avatarModule?.triggerGreeting) {
-            window.avatarModule.triggerGreeting();
-          } else {
-            // Fallback: Just speak
-            if (window.speakText) {
-              window.speakText("Hey there!");
-            }
-            
-            // Happy expression
-            if (window.avatarModule?.setExpression) {
-              window.avatarModule.setExpression("happy", 0.6, 3000);
-            }
-          }
-        });
+      const callContainer = document.getElementById('canvas-container');
+      if (canvas && callContainer && !callContainer.contains(canvas)) {
+        callContainer.appendChild(canvas);
       }
+
+      window.avatarModule?.transitionCameraToMode('call', 1800, () => {
+        window.avatarModule?.triggerGreeting?.();
+      });
       break;
   }
 }
+
 
 export function getCurrentScreen() {
   return currentScreen;

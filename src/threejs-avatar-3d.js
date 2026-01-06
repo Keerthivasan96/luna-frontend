@@ -348,16 +348,16 @@ export function init3DScene(containerId = "canvas-container") {
     100
   );
   
-  // Start in CALL mode (default)
-  const callMode = CAMERA_MODES.call;
-  camera.position.set(callMode.position.x, callMode.position.y, callMode.position.z);
-  camera.lookAt(callMode.lookAt.x, callMode.lookAt.y, callMode.lookAt.z);
-  camera.fov = callMode.fov;
+  // Start in TEXT CHAT mode (user lands here first)
+  const textChatMode = CAMERA_MODES.textChat;
+  camera.position.set(textChatMode.position.x, textChatMode.position.y, textChatMode.position.z);
+  camera.lookAt(textChatMode.lookAt.x, textChatMode.lookAt.y, textChatMode.lookAt.z);
+  camera.fov = textChatMode.fov;
   camera.updateProjectionMatrix();
   
   // Setup OrbitControls
   controls = new OrbitControls(camera, renderer.domElement);
-  controls.target.set(callMode.lookAt.x, callMode.lookAt.y, callMode.lookAt.z);
+  controls.target.set(textChatMode.lookAt.x, textChatMode.lookAt.y, textChatMode.lookAt.z);
   controls.enableDamping = true;
   controls.dampingFactor = CONFIG.controlsDampingFactor;
   controls.enablePan = CONFIG.controlsEnablePan;
@@ -373,7 +373,7 @@ export function init3DScene(containerId = "canvas-container") {
   window.addEventListener("resize", onResize, { passive: true });
   animate();
 
-  console.log("[3D] ✅ Scene ready! Camera: call mode");
+  console.log("[3D] ✅ Scene ready! Camera: text chat mode (close)");
   return true;
 }
 

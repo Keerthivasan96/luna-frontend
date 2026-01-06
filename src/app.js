@@ -813,7 +813,7 @@ async function init() {
   currentAvatarPath = loadAvatar();
   
   // Init 3D scene (starts in CALL mode camera position)
-  if (!init3DScene("canvas-container")) {
+  if (!init3DScene("canvas-container-text")) {
     console.log("❌ 3D failed");
     return;
   }
