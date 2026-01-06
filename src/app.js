@@ -548,8 +548,9 @@ function getClarificationReply() {
 
 // ============================================
 // SEND MESSAGE WITH SCREEN AWARENESS
+// NOTE: User message bubble is added by screen-manager, not here!
 // ============================================
-async function sendMessage(text) {
+async function sendMessage(text, addUserBubble = false) {
   if (!text?.trim() || isProcessing) return;
 
   if (needsClarification(text)) {
@@ -559,7 +560,7 @@ async function sendMessage(text) {
     const screen = getCurrentScreen();
     
     if (screen === 'textChat') {
-      addMessageBubble('user', text);
+      // Screen-manager already added user bubble
       addMessageBubble('assistant', clarification);
     } else {
       speak(clarification);
@@ -579,7 +580,7 @@ async function sendMessage(text) {
       const screen = getCurrentScreen();
       
       if (screen === 'textChat') {
-        addMessageBubble('user', text);
+        // Screen-manager already added user bubble
         addMessageBubble('assistant', response);
       } else {
         speak(response);
@@ -594,11 +595,7 @@ async function sendMessage(text) {
   conversationHistory.push({ role: "user", content: text });
   saveHistory();
   
-  // Add user message to UI if in text chat
-  const screen = getCurrentScreen();
-  if (screen === 'textChat') {
-    addMessageBubble('user', text);
-  }
+  // DON'T add user message - screen-manager already did it
   
   avatarStartTalking();
   setStatus("Thinking... 💭");

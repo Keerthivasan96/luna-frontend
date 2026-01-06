@@ -1,6 +1,7 @@
 /* ============================================
-   LUNA - 3-SCREEN REPLIKA STYLE
+   LUNA - 3-SCREEN REPLIKA STYLE WITH 3D AVATAR
    Blue/Purple theme, Glassmorphism
+   COMPLETE VERSION - All features included
    ============================================ */
 
 /* ============================================
@@ -195,7 +196,7 @@ body {
 }
 
 /* ============================================
-   SCREEN 2: TEXT CHAT
+   SCREEN 2: TEXT CHAT WITH 3D AVATAR
    ============================================ */
 #textChatScreen {
   background: var(--gradient-soft);
@@ -247,18 +248,40 @@ body {
   gap: var(--space-lg);
 }
 
-/* Static Avatar (Left) */
+/* 3D Avatar Container (Left) - REPLIKA STYLE */
 .static-avatar-container {
-  width: 280px;
+  width: 320px;
   flex-shrink: 0;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
+  padding-top: var(--space-lg);
 }
 
+/* NEW: 3D Avatar Canvas (Replika Style) */
+.text-chat-avatar-canvas {
+  width: 280px;
+  height: 480px;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: var(--glass-blur);
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  box-shadow: var(--shadow-medium);
+  position: relative;
+}
+
+.text-chat-avatar-canvas canvas {
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
+}
+
+/* Legacy: Keep for fallback */
 .static-avatar {
-  width: 240px;
-  height: 400px;
+  width: 280px;
+  height: 480px;
   background: rgba(255, 255, 255, 0.1);
   backdrop-filter: var(--glass-blur);
   border: 2px solid rgba(255, 255, 255, 0.2);
@@ -276,6 +299,39 @@ body {
   object-fit: cover;
 }
 
+/* Avatar Placeholder (if 3D fails) */
+.avatar-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #6B8DC4 0%, #9B8DD7 100%);
+}
+
+.avatar-placeholder-icon {
+  font-size: 120px;
+}
+
+/* Transcript Display (below avatar) */
+.transcript-display {
+  margin-top: var(--space-md);
+  padding: var(--space-md);
+  max-width: 280px;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: var(--radius-md);
+  
+  font-size: 13px;
+  font-weight: 500;
+  color: white;
+  line-height: 1.5;
+  text-align: center;
+  
+  animation: fadeIn 0.3s ease;
+}
+
 /* Chat Messages (Right) */
 .chat-messages-container {
   flex: 1;
@@ -286,12 +342,12 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: var(--radius-xl);
   overflow: hidden;
+  padding: var(--space-lg);
 }
 
 .text-chat-messages {
   flex: 1;
   overflow-y: auto;
-  padding: var(--space-lg);
   display: flex;
   flex-direction: column;
   gap: var(--space-md);
@@ -429,7 +485,7 @@ body {
 }
 
 /* ============================================
-   SCREEN 3: 3D AVATAR CALL
+   SCREEN 3: 3D AVATAR CALL (VOICE ONLY)
    ============================================ */
 #callScreen {
   z-index: 3;
@@ -513,108 +569,6 @@ body {
 .back-to-text-btn:hover {
   background: rgba(255, 255, 255, 0.25);
   transform: translateX(-4px);
-}
-
-/* Floating Chat Panel (Optional during call) */
-.call-chat-panel {
-  position: fixed;
-  bottom: 24px;
-  right: 24px;
-  width: 400px;
-  max-height: 500px;
-  z-index: 40;
-  
-  background: var(--glass-bg);
-  backdrop-filter: var(--glass-blur);
-  border: 1px solid var(--glass-border);
-  border-radius: var(--radius-xl);
-  
-  box-shadow: var(--shadow-medium);
-  
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.call-messages-container {
-  flex: 1;
-  overflow-y: auto;
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  
-  scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
-}
-
-.call-messages-container::-webkit-scrollbar {
-  width: 6px;
-}
-
-.call-messages-container::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.3);
-  border-radius: 3px;
-}
-
-.call-input-bar {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 12px 16px;
-  background: rgba(255, 255, 255, 0.1);
-  border-top: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-.call-mic-btn,
-.call-send-btn {
-  width: 40px;
-  height: 40px;
-  flex-shrink: 0;
-  border-radius: var(--radius-full);
-  border: none;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s ease;
-}
-
-.call-mic-btn {
-  background: transparent;
-  font-size: 20px;
-}
-
-.call-mic-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-}
-
-.call-mic-btn.active {
-  background: rgba(72, 187, 120, 0.3);
-}
-
-.call-send-btn {
-  background: rgba(255, 255, 255, 0.2);
-  font-size: 18px;
-}
-
-.call-send-btn:hover {
-  background: rgba(255, 255, 255, 0.3);
-}
-
-.call-chat-input {
-  flex: 1;
-  border: none;
-  background: transparent;
-  outline: none;
-  font-family: inherit;
-  font-size: 14px;
-  color: white;
-  padding: 8px 4px;
-}
-
-.call-chat-input::placeholder {
-  color: rgba(255, 255, 255, 0.5);
 }
 
 /* Settings Toggle */
@@ -942,100 +896,7 @@ details summary {
 }
 
 /* ============================================
-   RESPONSIVE - TABLET
-   ============================================ */
-@media (max-width: 768px) {
-  .landing-title {
-    font-size: 36px;
-  }
-  
-  .landing-subtitle {
-    font-size: 18px;
-  }
-  
-  .chat-container {
-    flex-direction: column;
-    padding: var(--space-md);
-  }
-  
-  .static-avatar-container {
-    width: 100%;
-    height: 200px;
-  }
-  
-  .static-avatar {
-    width: 160px;
-    height: 260px;
-  }
-  
-  .call-chat-panel {
-    width: calc(100vw - 48px);
-    max-height: 60vh;
-  }
-  
-  .menu-panel {
-    width: 100%;
-    right: -100%;
-  }
-}
-
-/* ============================================
-   RESPONSIVE - MOBILE
-   ============================================ */
-@media (max-width: 480px) {
-  .landing-title {
-    font-size: 28px;
-  }
-  
-  .landing-subtitle {
-    font-size: 16px;
-  }
-  
-  .enter-btn {
-    padding: 14px 36px;
-    font-size: 16px;
-  }
-  
-  .text-chat-input-bar {
-    padding: var(--space-md);
-    gap: var(--space-sm);
-  }
-  
-  .call-btn {
-    width: 44px;
-    height: 44px;
-  }
-  
-  .static-avatar {
-    width: 140px;
-    height: 240px;
-  }
-}
-
-/* ============================================
-   ACCESSIBILITY
-   ============================================ */
-button:focus-visible,
-input:focus-visible {
-  outline: 2px solid var(--blue-mid);
-  outline-offset: 2px;
-}
-
-/* ============================================
-   REDUCED MOTION
-   ============================================ */
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-  }
-}
-
-/* ============================================
-   FUNCTIONAL UI ELEMENTS (MISSING BEFORE)
+   FUNCTIONAL UI ELEMENTS
    ============================================ */
 
 /* Status Message (inline in header for text chat) */
@@ -1075,49 +936,6 @@ input:focus-visible {
 .status-message.active {
   opacity: 1;
   visibility: visible;
-}
-
-/* Transcript Display (user speech-to-text) */
-.transcript-display {
-  margin-top: var(--space-md);
-  padding: var(--space-md);
-  background: rgba(255, 255, 255, 0.15);
-  backdrop-filter: var(--glass-blur);
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  border-radius: var(--radius-md);
-  
-  font-size: 13px;
-  font-weight: 500;
-  color: white;
-  line-height: 1.5;
-  text-align: center;
-  
-  animation: fadeIn 0.3s ease;
-}
-
-/* Reply Display (AI text replies) */
-.reply-display {
-  padding: var(--space-md);
-  margin-top: var(--space-md);
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: var(--glass-blur);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: var(--radius-md);
-  
-  font-size: 14px;
-  font-weight: 500;
-  color: white;
-  line-height: 1.6;
-  
-  min-height: 60px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.reply-display:empty::before {
-  content: "...";
-  color: rgba(255, 255, 255, 0.4);
 }
 
 /* Chat Caption (voice mode - bottom center) */
@@ -1226,22 +1044,41 @@ input:focus-visible {
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
-/* Avatar Placeholder (for text chat screen) */
-.avatar-placeholder {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(135deg, #6B8DC4 0%, #9B8DD7 100%);
-}
-
-.avatar-placeholder-icon {
-  font-size: 120px;
-}
-
-/* Responsive adjustments for functional elements */
+/* ============================================
+   RESPONSIVE - TABLET
+   ============================================ */
 @media (max-width: 768px) {
+  .landing-title {
+    font-size: 36px;
+  }
+  
+  .landing-subtitle {
+    font-size: 18px;
+  }
+  
+  .chat-container {
+    flex-direction: column;
+    padding: var(--space-md);
+  }
+  
+  .static-avatar-container {
+    width: 100%;
+    height: auto;
+    padding-top: var(--space-md);
+  }
+  
+  .text-chat-avatar-canvas,
+  .static-avatar {
+    width: 200px;
+    height: 340px;
+    margin: 0 auto;
+  }
+  
+  .menu-panel {
+    width: 100%;
+    right: -100%;
+  }
+  
   .chat-caption {
     bottom: 100px;
     max-width: calc(100% - 48px);
@@ -1272,7 +1109,39 @@ input:focus-visible {
   }
 }
 
+/* ============================================
+   RESPONSIVE - MOBILE
+   ============================================ */
 @media (max-width: 480px) {
+  .landing-title {
+    font-size: 28px;
+  }
+  
+  .landing-subtitle {
+    font-size: 16px;
+  }
+  
+  .enter-btn {
+    padding: 14px 36px;
+    font-size: 16px;
+  }
+  
+  .text-chat-input-bar {
+    padding: var(--space-md);
+    gap: var(--space-sm);
+  }
+  
+  .call-btn {
+    width: 44px;
+    height: 44px;
+  }
+  
+  .text-chat-avatar-canvas,
+  .static-avatar {
+    width: 160px;
+    height: 280px;
+  }
+  
   .status-message {
     font-size: 12px;
     padding: 8px 16px;
@@ -1287,5 +1156,27 @@ input:focus-visible {
     width: 56px;
     height: 56px;
     font-size: 24px;
+  }
+}
+
+/* ============================================
+   ACCESSIBILITY
+   ============================================ */
+button:focus-visible,
+input:focus-visible {
+  outline: 2px solid var(--blue-mid);
+  outline-offset: 2px;
+}
+
+/* ============================================
+   REDUCED MOTION
+   ============================================ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }
