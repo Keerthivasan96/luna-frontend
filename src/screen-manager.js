@@ -1,6 +1,6 @@
 // ============================================
-// screen-manager.js - FIXED VERSION
-// Fixes: 1) Double message bug 2) Remove call text panel 3) Better 3D integration
+// screen-manager.js - WITH CAMERA TRANSITIONS
+// Integrates smooth Replika-style camera zoom
 // ============================================
 
 import { startListening, stopListening, setSpeaking } from "./speech.js";
@@ -55,6 +55,14 @@ function onScreenChange(screenName) {
       break;
       
     case 'textChat':
+      // TEXT CHAT MODE - Close camera, intimate feel
+      console.log('[ScreenManager] 🎬 Transitioning to TEXT CHAT mode');
+      
+      // Trigger camera transition to text chat mode
+      if (window.avatarModule?.transitionCameraToMode) {
+        window.avatarModule.transitionCameraToMode('textChat', 1500);
+      }
+      
       setTimeout(() => {
         const input = document.getElementById('textChatInput');
         if (input) input.focus();
@@ -65,8 +73,34 @@ function onScreenChange(screenName) {
       break;
       
     case 'call':
+      // CALL MODE - Zoom out, immersive feel
+      console.log('[ScreenManager] 🎬 Transitioning to CALL mode');
+      
       const input = document.getElementById('textChatInput');
       if (input) input.blur();
+      
+      // Trigger camera transition to call mode with greeting callback
+      if (window.avatarModule?.transitionCameraToMode) {
+        window.avatarModule.transitionCameraToMode('call', 1800, () => {
+          // CALLBACK: Triggered AFTER camera finishes zooming out
+          console.log('[ScreenManager] ✅ Camera transition complete, greeting user');
+          
+          // "Hey there!" greeting
+          if (window.avatarModule?.triggerGreeting) {
+            window.avatarModule.triggerGreeting();
+          } else {
+            // Fallback: Just speak
+            if (window.speakText) {
+              window.speakText("Hey there!");
+            }
+            
+            // Happy expression
+            if (window.avatarModule?.setExpression) {
+              window.avatarModule.setExpression("happy", 0.6, 3000);
+            }
+          }
+        });
+      }
       break;
   }
 }
@@ -282,7 +316,7 @@ function initTextChatScreen() {
   
   if (callBtn) {
     callBtn.addEventListener('click', () => {
-      console.log('[ScreenManager] Call button clicked');
+      console.log('[ScreenManager] 📞 Call button clicked - Starting camera transition');
       showScreen('call');
     });
   }
@@ -347,7 +381,7 @@ function initCallScreen() {
   
   if (backBtn) {
     backBtn.addEventListener('click', () => {
-      console.log('[ScreenManager] Back button clicked');
+      console.log('[ScreenManager] ← Back button clicked - Returning to text chat');
       stopListening();
       showScreen('textChat');
     });

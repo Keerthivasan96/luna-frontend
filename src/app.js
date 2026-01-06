@@ -1,6 +1,6 @@
 // ============================================
-// app.js - EMOTIONAL COMPANION (3-SCREEN FLOW)
-// Integrates with screen-manager.js for navigation
+// app.js - WITH REPLIKA-STYLE CAMERA TRANSITIONS
+// Full integration of smooth camera zoom system
 // ============================================
 
 import { startListening, stopListening, setSpeaking } from "./speech.js";
@@ -11,7 +11,11 @@ import {
   avatarStopTalking,
   loadRoomModel,
   useFallbackEnvironment,
-  getControls
+  getControls,
+  transitionCameraToMode,      // NEW - Replika-style camera transitions
+  isCameraTransitioning,        // NEW - Check if transition in progress
+  setExpression,                // NEW - Facial expressions
+  triggerWave                   // NEW - Wave gesture
 } from "./threejs-avatar-3d.js";
 import { 
   initScreenManager,
@@ -486,6 +490,27 @@ function stopSpeaking() {
 }
 
 // ============================================
+// GREETING FUNCTION (CALLED AFTER CAMERA ZOOM)
+// ============================================
+function triggerGreeting() {
+  console.log('[App] 👋 Triggering greeting after camera transition');
+  
+  // Speak greeting
+  speak("Hey there!");
+  
+  // Happy expression (0.6 intensity for 3 seconds)
+  if (setExpression) {
+    setExpression("happy", 0.6, 3000);
+  }
+  
+  // Optional: Add wave gesture
+  // Uncomment if you want avatar to wave when entering call mode
+  // if (triggerWave) {
+  //   setTimeout(() => triggerWave(), 500);
+  // }
+}
+
+// ============================================
 // VALIDATION
 // ============================================
 function isValidResponse(reply, userText) {
@@ -548,7 +573,6 @@ function getClarificationReply() {
 
 // ============================================
 // SEND MESSAGE WITH SCREEN AWARENESS
-// NOTE: User message bubble is added by screen-manager, not here!
 // ============================================
 async function sendMessage(text, addUserBubble = false) {
   if (!text?.trim() || isProcessing) return;
@@ -560,7 +584,6 @@ async function sendMessage(text, addUserBubble = false) {
     const screen = getCurrentScreen();
     
     if (screen === 'textChat') {
-      // Screen-manager already added user bubble
       addMessageBubble('assistant', clarification);
     } else {
       speak(clarification);
@@ -580,7 +603,6 @@ async function sendMessage(text, addUserBubble = false) {
       const screen = getCurrentScreen();
       
       if (screen === 'textChat') {
-        // Screen-manager already added user bubble
         addMessageBubble('assistant', response);
       } else {
         speak(response);
@@ -594,8 +616,6 @@ async function sendMessage(text, addUserBubble = false) {
 
   conversationHistory.push({ role: "user", content: text });
   saveHistory();
-  
-  // DON'T add user message - screen-manager already did it
   
   avatarStartTalking();
   setStatus("Thinking... 💭");
@@ -646,11 +666,11 @@ async function sendMessage(text, addUserBubble = false) {
     setStatus("Ready! 💭");
     
     // Handle reply based on current screen
+    const screen = getCurrentScreen();
+    
     if (screen === 'textChat') {
-      // Text chat: show as bubble
       addMessageBubble('assistant', reply);
     } else {
-      // Call screen: speak it
       speak(reply);
     }
     
@@ -675,6 +695,8 @@ async function sendMessage(text, addUserBubble = false) {
       ];
       errorResponse = errorResponses[Math.floor(Math.random() * errorResponses.length)];
     }
+    
+    const screen = getCurrentScreen();
     
     if (screen === 'textChat') {
       addMessageBubble('assistant', errorResponse);
@@ -725,7 +747,6 @@ clearBtn?.addEventListener("click", () => {
   clearHistory();
   stopSpeaking();
   
-  // Clear messages from UI (using screen-manager function)
   if (window.screenManager?.clearMessages) {
     window.screenManager.clearMessages();
   }
@@ -766,17 +787,24 @@ avatarOptions.forEach(btn => {
 });
 
 // ============================================
-// EXPOSE GLOBAL HANDLERS
+// EXPOSE GLOBAL HANDLERS & CAMERA FUNCTIONS
 // ============================================
 window.handleUserMessage = sendMessage;
 window.speakText = speak;
-window.avatarModule = { getControls };
+window.avatarModule = {
+  getControls,
+  transitionCameraToMode,      // For screen-manager to trigger transitions
+  isCameraTransitioning,        // Check if transition is in progress
+  setExpression,                // For facial expressions
+  triggerWave,                  // For wave gesture
+  triggerGreeting               // Greeting function (speak + expression)
+};
 
 // ============================================
 // INITIALIZE
 // ============================================
 async function init() {
-  console.log("🚀 Starting Luna (3-Screen Flow)...");
+  console.log("🚀 Starting Luna (Replika-style camera transitions)...");
   console.log(`📡 API: ${API_URL}`);
   
   // Initialize screen manager FIRST
@@ -784,7 +812,7 @@ async function init() {
   
   currentAvatarPath = loadAvatar();
   
-  // Init 3D scene
+  // Init 3D scene (starts in CALL mode camera position)
   if (!init3DScene("canvas-container")) {
     console.log("❌ 3D failed");
     return;
@@ -809,7 +837,7 @@ async function init() {
     updateLoadingStep('avatar', true);
   } catch (e) {
     console.log("❌ Avatar failed");
-    updateLoadingStep('avatar', true); // Continue anyway
+    updateLoadingStep('avatar', true);
   }
 
   avatarOptions.forEach(btn => {
@@ -839,10 +867,10 @@ async function init() {
     updateLoadingStep('mic', true);
   } catch (e) {
     console.log("⚠️ Mic access needed for voice features");
-    updateLoadingStep('mic', true); // Continue anyway
+    updateLoadingStep('mic', true);
   }
 
-  console.log("✅ Luna ready!");
+  console.log("✅ Luna ready with Replika-style camera transitions!");
 }
 
 if (document.readyState === "loading") {
