@@ -1338,6 +1338,34 @@ export function dispose3D() {
   avatarReady = hasRoomLoaded = false;
 }
 
+// ============================================
+// RESIZE RENDERER (FIX FOR SCREEN SWITCHING)
+// ============================================
+export function resizeRendererToContainer(targetContainer) {
+  if (!renderer || !camera || !targetContainer) {
+    console.warn("[3D] ⚠️ Cannot resize - missing components");
+    return;
+  }
+
+  const width = targetContainer.clientWidth;
+  const height = targetContainer.clientHeight;
+
+  if (width === 0 || height === 0) {
+    console.warn("[3D] ⚠️ Container has no dimensions");
+    return;
+  }
+
+  console.log(`[3D] 📐 Resizing to ${width}x${height}`);
+
+  // Update renderer
+  renderer.setSize(width, height, false);
+
+  // Update camera aspect
+  camera.aspect = width / height;
+  camera.updateProjectionMatrix();
+}
+
+
 export function isAvatarReady() { return avatarReady; }
 export function getVRM() { return currentVRM; }
 export function getScene() { return scene; }

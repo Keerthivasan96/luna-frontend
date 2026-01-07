@@ -57,12 +57,16 @@ function onScreenChange(screenName) {
       break;
 
     case 'textChat':
-      const textChatContainer = document.getElementById('canvas-container-text');
-      if (canvas && textChatContainer && !textChatContainer.contains(canvas)) {
-        textChatContainer.appendChild(canvas);
-      }
+  const textChatContainer = document.getElementById('canvas-container-text');
+  if (canvas && textChatContainer && !textChatContainer.contains(canvas)) {
+    textChatContainer.appendChild(canvas);
+    
+    // RESIZE IMMEDIATELY AFTER MOVE
+    window.avatarModule?.resizeRendererToContainer?.(textChatContainer);
+  }
 
-      window.avatarModule?.transitionCameraToMode('textChat', 1500);
+  window.avatarModule?.transitionCameraToMode('textChat', 1500);
+  // ... rest
       setTimeout(() => {
         const input = document.getElementById('textChatInput');
         if (input) input.focus();
@@ -72,15 +76,18 @@ function onScreenChange(screenName) {
       break;
 
     case 'call':
-      const callContainer = document.getElementById('canvas-container');
-      if (canvas && callContainer && !callContainer.contains(canvas)) {
-        callContainer.appendChild(canvas);
-      }
+  const callContainer = document.getElementById('canvas-container');
+  if (canvas && callContainer && !callContainer.contains(canvas)) {
+    callContainer.appendChild(canvas);
+    
+    // RESIZE IMMEDIATELY AFTER MOVE
+    window.avatarModule?.resizeRendererToContainer?.(callContainer);
+  }
 
-      window.avatarModule?.transitionCameraToMode('call', 1800, () => {
-        window.avatarModule?.triggerGreeting?.();
-      });
-      break;
+  window.avatarModule?.transitionCameraToMode('call', 1800, () => {
+    window.avatarModule?.triggerGreeting?.();
+  });
+  break;
   }
 }
 

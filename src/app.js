@@ -15,7 +15,8 @@ import {
   transitionCameraToMode,      // NEW - Replika-style camera transitions
   isCameraTransitioning,        // NEW - Check if transition in progress
   setExpression,                // NEW - Facial expressions
-  triggerWave                   // NEW - Wave gesture
+  triggerWave,
+  resizeRendererToContainer                   // NEW - Wave gesture
 } from "./threejs-avatar-3d.js";
 import { 
   initScreenManager,
@@ -793,11 +794,12 @@ window.handleUserMessage = sendMessage;
 window.speakText = speak;
 window.avatarModule = {
   getControls,
-  transitionCameraToMode,      // For screen-manager to trigger transitions
-  isCameraTransitioning,        // Check if transition is in progress
-  setExpression,                // For facial expressions
-  triggerWave,                  // For wave gesture
-  triggerGreeting               // Greeting function (speak + expression)
+  transitionCameraToMode,
+  isCameraTransitioning,
+  setExpression,
+  triggerWave,
+  triggerGreeting,
+  resizeRendererToContainer  // ADD THIS
 };
 
 // ============================================
