@@ -50,88 +50,40 @@ export function showScreen(screenName) {
 }
 
 function onScreenChange(screenName) {
-  switch(screenName) {
+  const canvas = document.querySelector('canvas');
+
+  switch (screenName) {
     case 'landing':
       break;
-      
+
     case 'textChat':
-      // TEXT CHAT MODE - Close camera, intimate feel
-      console.log('[ScreenManager] 🎬 Transitioning to TEXT CHAT mode');
-      
-      // MOVE CANVAS to text chat container
-      const textChatContainer = document.getElementById('textChatAvatarCanvas');
-      const canvas = document.querySelector('canvas');
-      
+      const textChatContainer = document.getElementById('canvas-container-text');
       if (canvas && textChatContainer && !textChatContainer.contains(canvas)) {
-        console.log('[ScreenManager] 📦 Moving canvas to text chat container');
         textChatContainer.appendChild(canvas);
-        
-        // CRITICAL: Resize renderer immediately after moving canvas
-        if (window.avatarModule?.resizeRendererToContainer) {
-          window.avatarModule.resizeRendererToContainer(textChatContainer);
-        }
       }
-      
-      // Trigger camera transition AFTER resize
-      if (window.avatarModule?.transitionCameraToMode) {
-        window.avatarModule.transitionCameraToMode('textChat', 1500);
-      }
-      
+
+      window.avatarModule?.transitionCameraToMode('textChat', 1500);
       setTimeout(() => {
         const input = document.getElementById('textChatInput');
         if (input) input.focus();
       }, 400);
-      
       stopListening();
       setSpeaking(false);
       break;
-      
+
     case 'call':
-      // CALL MODE - Zoom out, immersive feel
-      console.log('[ScreenManager] 🎬 Transitioning to CALL mode');
-      
-      const input = document.getElementById('textChatInput');
-      if (input) input.blur();
-      
-      // MOVE CANVAS to call container
       const callContainer = document.getElementById('canvas-container');
-      const canvas2 = document.querySelector('canvas');
-      
-      if (canvas2 && callContainer && !callContainer.contains(canvas2)) {
-        console.log('[ScreenManager] 📦 Moving canvas to call container');
-        callContainer.appendChild(canvas2);
-        
-        // CRITICAL: Resize renderer immediately after moving canvas
-        if (window.avatarModule?.resizeRendererToContainer) {
-          window.avatarModule.resizeRendererToContainer(callContainer);
-        }
+      if (canvas && callContainer && !callContainer.contains(canvas)) {
+        callContainer.appendChild(canvas);
       }
-      
-      // Trigger camera transition AFTER resize
-      if (window.avatarModule?.transitionCameraToMode) {
-        window.avatarModule.transitionCameraToMode('call', 1800, () => {
-          // CALLBACK: Triggered AFTER camera finishes zooming out
-          console.log('[ScreenManager] ✅ Camera transition complete, greeting user');
-          
-          // "Hey there!" greeting
-          if (window.avatarModule?.triggerGreeting) {
-            window.avatarModule.triggerGreeting();
-          } else {
-            // Fallback: Just speak
-            if (window.speakText) {
-              window.speakText("Hey there!");
-            }
-            
-            // Happy expression
-            if (window.avatarModule?.setExpression) {
-              window.avatarModule.setExpression("happy", 0.6, 3000);
-            }
-          }
-        });
-      }
+
+      window.avatarModule?.transitionCameraToMode('call', 1800, () => {
+        window.avatarModule?.triggerGreeting?.();
+      });
       break;
   }
 }
+
 
 export function getCurrentScreen() {
   return currentScreen;

@@ -12,11 +12,10 @@ import {
   loadRoomModel,
   useFallbackEnvironment,
   getControls,
-  transitionCameraToMode,       // NEW - Replika-style camera transitions
-  isCameraTransitioning,         // NEW - Check if transition in progress
-  setExpression,                 // NEW - Facial expressions
-  triggerWave,                   // NEW - Wave gesture
-  resizeRendererToContainer      // CRITICAL - Resize when canvas moves
+  transitionCameraToMode,      // NEW - Replika-style camera transitions
+  isCameraTransitioning,        // NEW - Check if transition in progress
+  setExpression,                // NEW - Facial expressions
+  triggerWave                   // NEW - Wave gesture
 } from "./threejs-avatar-3d.js";
 import { 
   initScreenManager,
@@ -798,8 +797,7 @@ window.avatarModule = {
   isCameraTransitioning,        // Check if transition is in progress
   setExpression,                // For facial expressions
   triggerWave,                  // For wave gesture
-  triggerGreeting,              // Greeting function (speak + expression)
-  resizeRendererToContainer     // CRITICAL: Resize renderer when canvas moves
+  triggerGreeting               // Greeting function (speak + expression)
 };
 
 // ============================================
@@ -814,8 +812,8 @@ async function init() {
   
   currentAvatarPath = loadAvatar();
   
-  // Init 3D scene (render in text chat container)
-  if (!init3DScene("textChatAvatarCanvas")) {
+  // Init 3D scene (starts in CALL mode camera position)
+  if (!init3DScene("canvas-container-text")) {
     console.log("❌ 3D failed");
     return;
   }

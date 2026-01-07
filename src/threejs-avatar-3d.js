@@ -1338,42 +1338,6 @@ export function dispose3D() {
   avatarReady = hasRoomLoaded = false;
 }
 
-// ============================================
-// RESIZE RENDERER TO CONTAINER (CRITICAL FIX)
-// ============================================
-export function resizeRendererToContainer(targetContainer) {
-  if (!renderer || !camera) {
-    console.warn("[3D] ⚠️ Renderer or camera not initialized");
-    return;
-  }
-
-  if (!targetContainer) {
-    console.warn("[3D] ⚠️ Target container is null");
-    return;
-  }
-
-  // Get container dimensions
-  const width = targetContainer.clientWidth;
-  const height = targetContainer.clientHeight;
-
-  // Safety check: container must have actual dimensions
-  if (width === 0 || height === 0) {
-    console.warn("[3D] ⚠️ Container has zero dimensions:", { width, height });
-    return;
-  }
-
-  console.log(`[3D] 📐 Resizing renderer: ${width}x${height}`);
-
-  // Update renderer size
-  renderer.setSize(width, height, false); // false = don't update canvas style
-
-  // Update camera aspect ratio
-  camera.aspect = width / height;
-  camera.updateProjectionMatrix();
-
-  console.log(`[3D] ✅ Resize complete - aspect: ${camera.aspect.toFixed(2)}`);
-}
-
 export function isAvatarReady() { return avatarReady; }
 export function getVRM() { return currentVRM; }
 export function getScene() { return scene; }
