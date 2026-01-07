@@ -2,6 +2,7 @@
    LUNA - 3-SCREEN REPLIKA STYLE WITH 3D AVATAR
    Blue/Purple theme, Glassmorphism
    COMPLETE VERSION - All features included
+   FIXED: Centered Enter Button
    ============================================ */
 
 /* ============================================
@@ -102,11 +103,16 @@ body {
   z-index: 10;
 }
 
+/* FIXED: Centered landing content with flexbox */
 .landing-content {
   text-align: center;
   max-width: 600px;
   padding: var(--space-xl);
   animation: fadeInUp 0.8s ease forwards;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
 
 @keyframes fadeInUp {

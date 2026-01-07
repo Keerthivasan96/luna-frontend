@@ -354,6 +354,7 @@ function sendTextMessage() {
 
 // ============================================
 // EVENT HANDLERS - CALL SCREEN (VOICE ONLY)
+// MIC STARTS ONLY ON MANUAL BUTTON CLICK
 // ============================================
 
 function initCallScreen() {
@@ -374,11 +375,15 @@ function initCallScreen() {
     });
   }
   
+  // MIC CONTROL: ONLY starts when user clicks the button manually
   if (micBtn) {
     micBtn.addEventListener('click', () => {
-      toggleMainMic();
+      toggleMainMic(); // ONLY HERE - no auto-start
     });
   }
+  
+  // NO AUTO-START CODE HERE - Mic remains OFF until user clicks button
+  console.log('[ScreenManager] Call screen ready - Mic OFF (manual control only)');
 }
 
 let isMicActive = false;

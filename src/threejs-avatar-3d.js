@@ -101,10 +101,10 @@ const CONFIG = {
   avatarZ: 0,
   
   // Room
-  roomScale: 1.1,
+  roomScale: 0.85,  // REDUCED from 1.1 (makes room smaller)
   roomX: 0,
-  roomY: -0.2,
-  roomZ: -2,
+  roomY: -0.15,     // ADJUSTED floor height
+  roomZ: -1.5,
   
   // Colors
   skyTopColor: 0xB8A8D4,
