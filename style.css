@@ -1168,6 +1168,28 @@ input:focus-visible {
   outline-offset: 2px;
 }
 
+
+#canvas-container,
+#canvas-container-text {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+#canvas-container-text {
+  aspect-ratio: 3 / 4; /* chat-friendly */
+  max-height: 420px;
+  border-radius: 18px;
+}
+
+canvas {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+
 /* ============================================
    REDUCED MOTION
    ============================================ */
